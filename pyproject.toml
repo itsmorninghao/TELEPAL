@@ -1,0 +1,25 @@
+[project]
+name = "telepal"
+version = "0.1.0"
+description = "基于 LangGraph 和 Telegram 的智能机器人"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "aiogram>=3.0.0",
+    "langgraph>=1.0.2",
+    "langchain>=1.0.0",
+    "langchain-openai>=0.2.0",
+    "langchain-community>=0.3.0",
+    "asyncpg>=0.29.0",
+    "psycopg[binary,pool]>=3.2.12",
+    "beautifulsoup4>=4.12.0",
+    "tavily-python>=0.3.0",
+    "python-dotenv>=1.0.0",
+    "ruff>=0.14.8",
+    "langgraph-checkpoint-postgres>=3.0.1",
+    "deepagents>=0.1.0",
+    "telegramify-markdown>=0.5.2",
+]
+
+[tool.uv]
+index-url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple"
