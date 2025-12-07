@@ -1,5 +1,6 @@
 """权限检查服务"""
 
+import logging
 from typing import Optional
 
 from aiogram import Bot
@@ -12,6 +13,8 @@ from src.auth.database import (
 )
 from src.auth.models import UserRole
 
+logger = logging.getLogger(__name__)
+
 
 async def check_super_admin(user_id: int) -> bool:
     """检查用户是否为超管"""
@@ -22,12 +25,12 @@ async def check_group_admin(bot: Bot, chat_id: int, user_id: int) -> bool:
     """检查用户是否为群组管理员（通过 Telegram API）"""
     try:
         member = await bot.get_chat_member(chat_id=chat_id, user_id=user_id)
-        # 检查是否为管理员或群主
-        return member.status in [
-            ChatMember.Status.ADMINISTRATOR,
-            ChatMember.Status.CREATOR,
-        ]
-    except Exception:
+        is_admin = member.status in ["administrator", "creator"]
+        return is_admin
+    except Exception as e:
+        logger.warning(
+            f"检查群管权限失败: user_id={user_id}, chat_id={chat_id}, error={e}"
+        )
         return False
 
 
