@@ -54,16 +54,16 @@ async def route_command(message: Message) -> bool:
     # 1. 检查命令是否存在
     command = command_registry.get(command_name)
     if not command:
-        await message.answer("不存在此命令")
+        await message.answer("不存在此命令\n\n使用 /help 查看可用命令列表")
         return True
 
     # 2. 场景检查
     chat_type = "private" if message.chat.type == "private" else "group"
     if chat_type not in command.allowed_chat_types:
         if chat_type == "private":
-            await message.answer("此命令仅限群组使用")
+            await message.answer("此命令仅限群组使用\n\n使用 /help 查看可用命令列表")
         else:
-            await message.answer("此命令仅限私聊使用")
+            await message.answer("此命令仅限私聊使用\n\n使用 /help 查看可用命令列表")
         return True
 
     # 3. 权限检查
@@ -77,7 +77,7 @@ async def route_command(message: Message) -> bool:
         if chat_type == "private":
             # 群组管理员在私聊中没有管理权限，只有超管可以
             if not await check_super_admin(user_id):
-                await message.answer("权限不足")
+                await message.answer("权限不足\n\n使用 /help 查看可用命令列表")
                 return True
         else:
             # 在群组中，检查是否是群管或超管
@@ -85,11 +85,11 @@ async def route_command(message: Message) -> bool:
                 message.bot, message.chat.id, user_id
             )
             if user_role not in ["super_admin", "group_admin"]:
-                await message.answer("权限不足")
+                await message.answer("权限不足\n\n使用 /help 查看可用命令列表")
                 return True
     elif command.required_role == "super_admin":
         if not await check_super_admin(user_id):
-            await message.answer("权限不足")
+            await message.answer("权限不足\n\n使用 /help 查看可用命令列表")
             return True
 
     # 4. 执行命令（参数验证由 handler 自行处理）
@@ -210,11 +210,7 @@ async def handle_message(message: Message):
         is_group_authorized = await check_group_authorized(message.chat.id)
         if not is_group_authorized:
             try:
-                await message.answer(
-                    escape_markdown_v2(
-                        f"本群 {message.chat.id} 未获授权，机器人将退出。"
-                    )
-                )
+                await message.answer(f"本群 {message.chat.id} 未获授权，机器人将退出。", parse_mode=None)
                 await message.bot.leave_chat(message.chat.id)
             except TelegramForbiddenError:
                 logger.debug(f"机器人已不在群组中")

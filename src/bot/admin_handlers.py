@@ -14,7 +14,7 @@ from src.auth.database import (
     set_user_permission,
 )
 from src.auth.models import UserRole
-from src.auth.service import check_super_admin
+from src.auth.service import check_super_admin, check_user_role_in_group
 from src.bot.commands import Command, command_registry
 from src.utils.db.store import get_store
 
@@ -461,6 +461,51 @@ async def cmd_memory_delete(message: Message):
         await message.answer("操作失败，请稍后重试。", parse_mode=None)
 
 
+# ==================== Help 命令 ====================
+
+
+async def cmd_help(message: Message):
+    """显示帮助信息，根据用户身份显示可用命令"""
+    user_id = message.from_user.id
+    chat_type = "private" if message.chat.type == "private" else "group"
+    chat_id = message.chat.id if chat_type == "group" else None
+
+    # 判断用户身份级别
+    is_super = await check_super_admin(user_id)
+    is_group_admin = False
+    if chat_type == "group" and not is_super:
+        role = await check_user_role_in_group(message.bot, chat_id, user_id)
+        is_group_admin = role == "group_admin"
+
+    # 根据级别拼接命令字符串
+    help_text = "📋 可用命令列表\n\n"
+
+    # 超管级别
+    if is_super and chat_type == "private":
+        help_text += "🔴 超管命令：\n"
+        help_text += "• /group_authorize <chat_id> - 授权群组\n"
+        help_text += "• /group_revoke <chat_id> - 撤销群组授权\n"
+        help_text += "• /group_list - 查看所有已授权群组\n"
+        help_text += "• /permission_set <user_id> <role> - 设置用户权限\n"
+        help_text += "\n"
+
+    # 管理级别
+    if is_super or is_group_admin:
+        help_text += "🟡 管理命令：\n"
+        help_text += "• /whitelist_add <user_id> [private|group] [chat_id] - 添加白名单用户\n"
+        help_text += "• /whitelist_remove <user_id> [private|group] [chat_id] - 移除白名单用户\n"
+        help_text += "• /whitelist_list [private|group] [chat_id] - 查看白名单列表\n"
+        help_text += "\n"
+
+    # 普通用户级别
+    help_text += "🟢 普通命令：\n"
+    help_text += "• /memory_list [user_id] [query] - 查看长期记忆\n"
+    help_text += "• /memory_delete [user_id] <memory_key> - 删除长期记忆\n"
+    help_text += "• /help - 显示可用命令列表\n"
+
+    await message.answer(help_text, parse_mode=None)
+
+
 # ==================== 注册所有命令 ====================
 
 
@@ -566,5 +611,17 @@ def register_all_commands():
             required_role="user",
             allowed_chat_types=["private", "group"],
             handler=cmd_memory_delete,
+        )
+    )
+
+    # Help 命令（所有用户可用）
+    command_registry.register(
+        Command(
+            name="help",
+            description="显示帮助信息",
+            usage="/help - 显示可用命令列表",
+            required_role="user",
+            allowed_chat_types=["private", "group"],
+            handler=cmd_help,
         )
     )
