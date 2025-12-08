@@ -124,6 +124,12 @@ async def is_mention_bot(message: Message, bot: Bot) -> bool:
                 # 检查是否提及了机器人
                 if entity.user and entity.user.id == bot_me.id:
                     return True
+            elif entity.type == "bot_command":
+                # 这种情况没有被处理!就是/memory_list@bot_username这样的形式
+                if message.text and "@" in message.text:
+                    command_text = message.text[entity.offset : entity.offset + entity.length]
+                    if f"@{bot_me.username}" in command_text:
+                        return True
 
     return False
 

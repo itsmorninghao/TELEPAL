@@ -48,6 +48,10 @@ async def route_command(message: Message) -> bool:
     if not parts or not parts[0].startswith("/"):
         return False
     command_name = parts[0][1:]  # 去掉 / 前缀
+    logger.info(f"command_name: {command_name}")
+    if "@" in command_name:
+        command_name = command_name.split("@")[0]
+    logger.info(f"command_name: {command_name}")
     if not command_name:
         return False
 
