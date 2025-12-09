@@ -30,7 +30,7 @@
 
 ```bash
 # 克隆项目
-git clone https://github.com/your-username/TelePal.git
+git clone https://github.com/itsmorninghao/TelePal.git
 cd TelePal
 
 # 安装依赖
@@ -140,6 +140,13 @@ TelePal/
 │       └── settings.py
 └── logs/                # 日志目录
 ```
+
+## 开发计划
+- [ ] 让模型能够感知时间,兼容多时区
+- [ ] 能够生成/执行定时任务
+- [ ] 在群聊中能够识别出不同的人,而不是把所有人当成同一个人
+- [ ] 可能会做多会话管理,正在考虑是否需要这样的功能
+- [ ] 可能会考虑对SQLite的支持以简化部署
 
 ## License
 
