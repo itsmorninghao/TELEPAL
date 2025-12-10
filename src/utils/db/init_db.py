@@ -77,7 +77,26 @@ async def init_database():
                     ON whitelist(chat_type, chat_id);
                 """)
 
-                # 4. 初始化超管权限和白名单
+                # 4. 创建用户资料表
+                logger.info("创建 user_profiles 表...")
+                await cur.execute("""
+                    CREATE TABLE IF NOT EXISTS user_profiles (
+                        user_id BIGINT PRIMARY KEY,
+                        latitude DOUBLE PRECISION NOT NULL,
+                        longitude DOUBLE PRECISION NOT NULL,
+                        timezone VARCHAR(100),
+                        location_updated_at TIMESTAMP DEFAULT NOW(),
+                        created_at TIMESTAMP DEFAULT NOW()
+                    );
+                """)
+
+                # 创建索引
+                await cur.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_user_profiles_user_id 
+                    ON user_profiles(user_id);
+                """)
+
+                # 5. 初始化超管权限和白名单
                 initial_admins = (setting.INITIAL_SUPER_ADMINS or "").strip()
                 if initial_admins:
                     admin_ids = [

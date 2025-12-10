@@ -19,6 +19,8 @@ dependencies = [
     "langgraph-checkpoint-postgres>=3.0.1",
     "deepagents>=0.1.0",
     "telegramify-markdown>=0.5.2",
+    "geopy>=2.4.0",
+    "timezonefinder>=6.2.0",
 ]
 
 [tool.uv]

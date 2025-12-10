@@ -461,6 +461,27 @@ async def cmd_memory_delete(message: Message):
         await message.answer("操作失败，请稍后重试。", parse_mode=None)
 
 
+# ==================== Set Location 命令 ====================
+
+
+async def cmd_set_location(message: Message):
+    """处理 /set_location 命令，请求用户位置信息"""
+    from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+
+    # 创建带位置请求按钮的键盘
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="📍 分享位置", request_location=True)],
+            [KeyboardButton(text="🚫 我拒绝!")]
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=True,
+    )
+
+    welcome_text = "很高兴遇见你！我是 TelePal。\n\n为了给您更贴心的陪伴，我想了解您所在的时区。请点击下方按钮让我知道您的位置。放心！我只用它来调整时间，不会有除了我两的第三个人知道！。\n\n当然，如果您暂时不想分享，我们也可以先从默认时区开始。你可以随时使用 /set_location 命令来重新设置。\n\n"
+    await message.answer(welcome_text, reply_markup=keyboard, parse_mode=None)
+
+
 # ==================== Help 命令 ====================
 
 
@@ -499,6 +520,8 @@ async def cmd_help(message: Message):
 
     # 普通用户级别
     help_text += "🟢 普通命令：\n"
+    if chat_type == "private":
+        help_text += "• /set_location - 设置位置信息\n"
     help_text += "• /memory_list [user_id] [query] - 查看长期记忆\n"
     help_text += "• /memory_delete [user_id] <memory_key> - 删除长期记忆\n"
     help_text += "• /help - 显示可用命令列表\n"
@@ -611,6 +634,18 @@ def register_all_commands():
             required_role="user",
             allowed_chat_types=["private", "group"],
             handler=cmd_memory_delete,
+        )
+    )
+
+    # Start 命令（所有用户可用）
+    command_registry.register(
+        Command(
+            name="set_location",
+            description="开始使用机器人",
+            usage="/start - 开始使用机器人",
+            required_role="user",
+            allowed_chat_types=["private"],
+            handler=cmd_set_location,
         )
     )
 
