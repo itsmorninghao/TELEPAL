@@ -6,7 +6,7 @@ from typing import Optional
 from aiogram import Bot
 from aiogram.types import ChatMember, Message
 
-from src.auth.database import (
+from src.database.repositories.auth import (
     is_group_authorized,
     is_super_admin,
     is_user_whitelisted,

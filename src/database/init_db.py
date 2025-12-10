@@ -5,7 +5,7 @@ import sys
 
 # 导入 settings 以初始化环境变量和路径
 import src.utils.settings  # noqa: F401
-from src.utils.db.connection import close_pool, create_pool
+from src.database.connection import close_pool, create_pool
 from src.utils.logger import setup_logger
 from src.utils.settings import setting
 
@@ -152,3 +152,4 @@ async def init_database():
 
 if __name__ == "__main__":
     asyncio.run(init_database())
+

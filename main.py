@@ -14,10 +14,14 @@ from src.bot.middleware import (
     ErrorHandlingMiddleware,
     LoggingMiddleware,
 )
-from src.utils.db.checkpointer import init_checkpointer
-from src.utils.db.connection import close_pool, create_pool, health_check
-from src.utils.db.init_db import init_database
-from src.utils.db.store import init_store
+from src.database import (
+    close_pool,
+    create_pool,
+    health_check,
+    init_checkpointer,
+    init_store,
+)
+from src.database.init_db import init_database
 from src.utils.logger import setup_logger
 from src.utils.settings import setting
 

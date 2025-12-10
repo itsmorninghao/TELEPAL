@@ -3,7 +3,7 @@
 from langchain_openai import OpenAIEmbeddings
 from langgraph.store.postgres.aio import AsyncPostgresStore
 
-from src.utils.db.connection import get_pool
+from src.database.connection import get_pool
 from src.utils.settings import setting
 
 # 初始化标志，确保 setup() 只执行一次
@@ -69,3 +69,4 @@ async def get_store() -> AsyncPostgresStore:
         _setup_done = True
 
     return _store_instance
+

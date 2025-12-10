@@ -6,7 +6,7 @@ from contextvars import ContextVar
 
 from langchain_core.tools import tool
 
-from src.utils.db.store import get_store
+from src.database import get_store
 
 # 定义上下文变量，用于在运行时传递 user_id
 user_id_context: ContextVar[int] = ContextVar("user_id")
@@ -105,7 +105,7 @@ if __name__ == "__main__":
 
     # 导入 settings 以初始化环境变量和路径
     import src.utils.settings  # noqa: F401
-    from src.utils.db.connection import close_pool, create_pool, health_check
+    from src.database import close_pool, create_pool, health_check
 
     async def test():
         """测试记忆工具"""

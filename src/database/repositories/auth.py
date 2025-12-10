@@ -1,6 +1,5 @@
 """用户权限数据库操作"""
 
-from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from src.auth.models import (
@@ -9,7 +8,7 @@ from src.auth.models import (
     UserRole,
     WhitelistEntry,
 )
-from src.utils.db.connection import get_pool
+from src.database.connection import get_pool
 
 
 def _row_to_dict(row, cursor) -> Optional[Dict[str, Any]]:
@@ -267,3 +266,4 @@ async def list_whitelist(
                 await cur.execute("SELECT * FROM whitelist ORDER BY created_at DESC")
             rows = await cur.fetchall()
             return [WhitelistEntry.from_db_row(_row_to_dict(row, cur)) for row in rows]
+

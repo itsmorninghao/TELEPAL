@@ -2,7 +2,7 @@
 
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 
-from src.utils.db.connection import get_pool
+from src.database.connection import get_pool
 
 # 初始化标志，确保 setup() 只执行一次
 _setup_done: bool = False
@@ -46,3 +46,4 @@ async def init_checkpointer() -> None:
     checkpointer = AsyncPostgresSaver(pool)
     await checkpointer.setup()
     _setup_done = True
+

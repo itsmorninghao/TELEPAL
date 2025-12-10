@@ -4,7 +4,11 @@ import logging
 
 from aiogram.types import Message
 
-from src.auth.database import (
+from src.auth.models import UserRole
+from src.auth.service import check_super_admin, check_user_role_in_group
+from src.bot.commands import Command, command_registry
+from src.database import get_store
+from src.database.repositories.auth import (
     add_to_whitelist,
     authorize_group,
     list_authorized_groups,
@@ -13,10 +17,6 @@ from src.auth.database import (
     revoke_group_authorization,
     set_user_permission,
 )
-from src.auth.models import UserRole
-from src.auth.service import check_super_admin, check_user_role_in_group
-from src.bot.commands import Command, command_registry
-from src.utils.db.store import get_store
 
 logger = logging.getLogger(__name__)
 
