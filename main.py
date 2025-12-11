@@ -1,7 +1,6 @@
 """应用入口"""
 
 import asyncio
-import os
 import sys
 
 from aiogram import Bot, Dispatcher
@@ -18,8 +17,6 @@ from src.database import (
     close_pool,
     create_pool,
     health_check,
-    init_checkpointer,
-    init_store,
 )
 from src.database.init_db import init_database
 from src.utils.logger import setup_logger
@@ -35,11 +32,8 @@ async def main():
         if not await health_check():
             raise Exception("数据库连接失败")
 
-        # 2. 执行数据库初始化
+        # 执行数据库初始化
         await init_database()
-
-        await init_checkpointer()
-        await init_store()
 
         bot = Bot(
             token=setting.TELEGRAM_BOT_TOKEN,

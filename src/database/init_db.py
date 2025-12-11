@@ -5,15 +5,41 @@ import sys
 
 # 导入 settings 以初始化环境变量和路径
 import src.utils.settings  # noqa: F401
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langgraph.store.postgres.aio import AsyncPostgresStore
+
 from src.database.connection import close_pool, create_pool
 from src.utils.logger import setup_logger
-from src.utils.settings import setting
+from src.utils.settings import get_embeddings, get_index_config, setting
 
 logger = setup_logger()
 
 
+async def _init_langgraph_tables(pool) -> None:
+    """初始化 LangGraph 相关表结构
+
+    包括：
+    - AsyncPostgresSaver (对话记忆/checkpointer) 所需的表
+    - AsyncPostgresStore (长期记忆/向量存储) 所需的表
+
+    Args:
+        pool: 数据库连接池
+    """
+    # 初始化checkpointer表
+    logger.info("初始化 LangGraph Checkpointer 表...")
+    checkpointer = AsyncPostgresSaver(pool)
+    await checkpointer.setup()
+
+    # 2. 初始化store表
+    logger.info("初始化 LangGraph Store 表...")
+    embeddings = get_embeddings()
+    index_config = get_index_config(embeddings)
+    store = AsyncPostgresStore(pool, index=index_config)
+    await store.setup()
+
+
 async def init_database():
-    """初始化数据库：创建业务表，初始化超管权限和白名单"""
+    """初始化数据库：创建业务表，初始化超管权限和白名单，初始化 LangGraph 表"""
     try:
         logger.info("开始数据库初始化...")
 
@@ -142,6 +168,9 @@ async def init_database():
                         "INITIAL_SUPER_ADMINS 环境变量未设置，跳过超管初始化"
                     )
 
+        # 6. 初始化 LangGraph 相关表（在业务表之后）
+        await _init_langgraph_tables(pool)
+
         await close_pool()
         logger.info("数据库初始化成功")
 
@@ -152,4 +181,3 @@ async def init_database():
 
 if __name__ == "__main__":
     asyncio.run(init_database())
-

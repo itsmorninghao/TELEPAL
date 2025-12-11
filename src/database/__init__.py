@@ -20,8 +20,6 @@ from src.database.connection import (
 from src.database.langgraph import (
     get_checkpointer,
     get_store,
-    init_checkpointer,
-    init_store,
 )
 
 # 业务数据访问层
@@ -36,11 +34,8 @@ __all__ = [
     "health_check",
     # LangGraph
     "get_checkpointer",
-    "init_checkpointer",
     "get_store",
-    "init_store",
     # 业务 repositories
     "auth",
     "profiles",
 ]
-

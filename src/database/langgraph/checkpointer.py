@@ -4,46 +4,20 @@ from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 
 from src.database.connection import get_pool
 
-# 初始化标志，确保 setup() 只执行一次
-_setup_done: bool = False
+# 单例 checkpointer 实例
+_checkpointer_instance: AsyncPostgresSaver | None = None
 
 
 async def get_checkpointer() -> AsyncPostgresSaver:
-    """获取 AsyncPostgresSaver 实例（对话记忆）
+    """获取 AsyncPostgresSaver 单例实例（对话记忆）"""
+    global _checkpointer_instance
 
-    使用共享连接池以优化性能和资源管理。
+    # 如果已存在实例，直接返回
+    if _checkpointer_instance is not None:
+        return _checkpointer_instance
 
-    Returns:
-        AsyncPostgresSaver 实例
-    """
-    global _setup_done
-
+    # 创建新实例
     pool = await get_pool()
+    _checkpointer_instance = AsyncPostgresSaver(pool)
 
-    checkpointer = AsyncPostgresSaver(pool)
-
-    if not _setup_done:
-        await checkpointer.setup()
-        _setup_done = True
-
-    return checkpointer
-
-
-async def init_checkpointer() -> None:
-    """初始化 checkpointer 表结构
-
-    在应用启动时调用，确保表结构已创建。
-    这个方法会处理 CREATE INDEX CONCURRENTLY 等不能在事务中执行的命令。
-    """
-    global _setup_done
-
-    if _setup_done:
-        return
-
-    # 获取共享连接池
-    pool = await get_pool()
-
-    checkpointer = AsyncPostgresSaver(pool)
-    await checkpointer.setup()
-    _setup_done = True
-
+    return _checkpointer_instance
