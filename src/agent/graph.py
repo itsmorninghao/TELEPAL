@@ -12,8 +12,8 @@ from langgraph.graph import END, StateGraph
 
 from src.agent.prompts import system_prompt_template
 from src.agent.state import AgentState
-from src.bot.location_service import get_user_location
-from src.utils.db.checkpointer import get_checkpointer
+from src.database import get_checkpointer
+from src.database.repositories import profiles
 from src.utils.settings import setting
 from src.utils.tools import get_available_tools
 from src.utils.tools.memory import user_id_context
@@ -116,7 +116,7 @@ async def get_compiled_graph(
 
     # 获取用户时间信息
     time_info = "未设置时区信息"
-    user_location = await get_user_location(user_id)
+    user_location = await profiles.get_user_location(user_id)
     if user_location and user_location.get("timezone"):
         try:
             timezone_str = user_location["timezone"]

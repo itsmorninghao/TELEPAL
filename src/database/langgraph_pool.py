@@ -1,29 +1,21 @@
-"""PostgreSQL 数据库连接池管理"""
+"""LangGraph 专用 psycopg 连接池管理
 
-from typing import Any, Dict
+本模块为 LangGraph 组件 `AsyncPostgresSaver` 和 `AsyncPostgresStore` 提供连接池。
+LangGraph 要求使用 `psycopg_pool.AsyncConnectionPool` 不兼容 SQLAlchemy。
+
+"""
 
 from psycopg import AsyncConnection
 from psycopg_pool import AsyncConnectionPool
 
-from src.utils.settings import setting
+from src.utils.settings import get_db_config
 
-# 全局连接池
+# 全局连接池以支持 LangGraph 
 _pool: AsyncConnectionPool | None = None
 
 
-def get_db_config() -> Dict[str, Any]:
-    """获取数据库配置"""
-    return {
-        "host": setting.POSTGRES_HOST,
-        "port": setting.POSTGRES_PORT,
-        "database": setting.POSTGRES_DB,
-        "user": setting.POSTGRES_USER,
-        "password": setting.POSTGRES_PASSWORD,
-    }
-
-
 def _build_connection_string() -> str:
-    """构建数据库连接字符串"""
+    """构建 psycopg 数据库连接字符串"""
     config = get_db_config()
     return (
         f"postgresql://{config['user']}:{config['password']}"
@@ -31,13 +23,13 @@ def _build_connection_string() -> str:
     )
 
 
-async def _configure_connection(conn: AsyncConnection):
+async def _configure_connection(conn: AsyncConnection) -> None:
     """配置连接回调，设置 autocommit"""
     await conn.set_autocommit(True)
 
 
 async def create_pool() -> AsyncConnectionPool:
-    """创建数据库连接池"""
+    """创建 LangGraph 专用连接池"""
     global _pool
 
     if _pool is None:
@@ -55,14 +47,14 @@ async def create_pool() -> AsyncConnectionPool:
 
 
 async def get_pool() -> AsyncConnectionPool:
-    """获取数据库连接池（如果不存在则创建）"""
+    """获取 LangGraph 连接池（如果不存在则创建）"""
     if _pool is None:
         return await create_pool()
     return _pool
 
 
 async def close_pool() -> None:
-    """关闭数据库连接池"""
+    """关闭 LangGraph 连接池"""
     global _pool
 
     if _pool is not None:
@@ -81,3 +73,4 @@ async def health_check() -> bool:
         return True
     except Exception:
         return False
+

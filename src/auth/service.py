@@ -6,12 +6,12 @@ from typing import Optional
 from aiogram import Bot
 from aiogram.types import ChatMember, Message
 
-from src.auth.database import (
+from src.auth.models import UserRole
+from src.database.repositories.auth import (
     is_group_authorized,
     is_super_admin,
     is_user_whitelisted,
 )
-from src.auth.models import UserRole
 
 logger = logging.getLogger(__name__)
 
@@ -127,7 +127,9 @@ async def is_mention_bot(message: Message, bot: Bot) -> bool:
             elif entity.type == "bot_command":
                 # 这种情况没有被处理!就是/memory_list@bot_username这样的形式
                 if message.text and "@" in message.text:
-                    command_text = message.text[entity.offset : entity.offset + entity.length]
+                    command_text = message.text[
+                        entity.offset : entity.offset + entity.length
+                    ]
                     if f"@{bot_me.username}" in command_text:
                         return True
 

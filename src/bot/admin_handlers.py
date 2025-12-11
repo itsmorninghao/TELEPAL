@@ -4,7 +4,11 @@ import logging
 
 from aiogram.types import Message
 
-from src.auth.database import (
+from src.auth.models import UserRole
+from src.auth.service import check_super_admin, check_user_role_in_group
+from src.bot.commands import Command, command_registry
+from src.database import get_store
+from src.database.repositories.auth import (
     add_to_whitelist,
     authorize_group,
     list_authorized_groups,
@@ -13,10 +17,6 @@ from src.auth.database import (
     revoke_group_authorization,
     set_user_permission,
 )
-from src.auth.models import UserRole
-from src.auth.service import check_super_admin, check_user_role_in_group
-from src.bot.commands import Command, command_registry
-from src.utils.db.store import get_store
 
 logger = logging.getLogger(__name__)
 
@@ -466,13 +466,13 @@ async def cmd_memory_delete(message: Message):
 
 async def cmd_set_location(message: Message):
     """处理 /set_location 命令，请求用户位置信息"""
-    from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+    from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 
     # 创建带位置请求按钮的键盘
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="📍 分享位置", request_location=True)],
-            [KeyboardButton(text="🚫 我拒绝!")]
+            [KeyboardButton(text="🚫 我拒绝!")],
         ],
         resize_keyboard=True,
         one_time_keyboard=True,
@@ -513,8 +513,12 @@ async def cmd_help(message: Message):
     # 管理级别
     if is_super or is_group_admin:
         help_text += "🟡 管理命令：\n"
-        help_text += "• /whitelist_add <user_id> [private|group] [chat_id] - 添加白名单用户\n"
-        help_text += "• /whitelist_remove <user_id> [private|group] [chat_id] - 移除白名单用户\n"
+        help_text += (
+            "• /whitelist_add <user_id> [private|group] [chat_id] - 添加白名单用户\n"
+        )
+        help_text += (
+            "• /whitelist_remove <user_id> [private|group] [chat_id] - 移除白名单用户\n"
+        )
         help_text += "• /whitelist_list [private|group] [chat_id] - 查看白名单列表\n"
         help_text += "\n"
 

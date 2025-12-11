@@ -4,9 +4,9 @@ import logging
 from typing import Optional
 
 import telegramify_markdown
-from aiogram import Router,F 
+from aiogram import F, Router
 from aiogram.exceptions import TelegramForbiddenError
-from aiogram.types import Message,ReplyKeyboardRemove
+from aiogram.types import Message, ReplyKeyboardRemove
 from langchain_core.messages import AIMessage, HumanMessage
 
 from src.agent.graph import get_compiled_graph, limit_messages
@@ -21,7 +21,7 @@ from src.auth.service import (
     is_reply_to_bot,
 )
 from src.bot.commands import command_registry
-from src.bot.location_service import save_user_location,get_timezone_from_location
+from src.bot.location_service import get_timezone_from_location, save_user_location
 from src.utils.settings import setting
 
 logger = logging.getLogger(__name__)
@@ -181,31 +181,29 @@ async def handle_chat(message: Message) -> None:
         logger.error(f"处理消息时发生错误: {e}", exc_info=True)
         await message.answer("处理您的消息时遇到了问题，请稍后重试。")
 
+
 async def handle_location(message: Message) -> None:
     """处理用户位置信息，保存到数据库"""
-    try:     
+    try:
         user_id = message.from_user.id
         latitude = message.location.latitude
         longitude = message.location.longitude
-        
+
         timezone = await get_timezone_from_location(latitude, longitude)
 
         if timezone == "Unknown":
-            await message.answer(
-                "无法获取时区,请联系管理员或者重试",
-                parse_mode=None
-            )
+            await message.answer("无法获取时区,请联系管理员或者重试", parse_mode=None)
             return
 
         await save_user_location(user_id, latitude, longitude, timezone)
-        
+
         await message.answer(
             f"✅ 位置信息已保存！\n\n"
             f"📍 位置：纬度 {latitude:.6f}, 经度 {longitude:.6f}\n"
             f"🕐 时区：{timezone}",
-            parse_mode=None
+            parse_mode=None,
         )
-            
+
     except Exception as e:
         logger.error(f"处理位置信息时发生错误: {e}", exc_info=True)
         await message.answer(
@@ -218,14 +216,15 @@ async def handle_location(message: Message) -> None:
 async def handle_location_message(message: Message):
     latitude = message.location.latitude
     longitude = message.location.longitude
-    
+
     await message.answer(
         f"收到！你的位置是：\n纬度: {latitude}\n经度: {longitude}\n\n正在设置时区...",
         parse_mode=None,
-        reply_markup=ReplyKeyboardRemove()
+        reply_markup=ReplyKeyboardRemove(),
     )
 
     await handle_location(message)
+
 
 @router.message()
 async def handle_message(message: Message):
@@ -260,7 +259,9 @@ async def handle_message(message: Message):
         is_group_authorized = await check_group_authorized(message.chat.id)
         if not is_group_authorized:
             try:
-                await message.answer(f"本群 {message.chat.id} 未获授权，机器人将退出。", parse_mode=None)
+                await message.answer(
+                    f"本群 {message.chat.id} 未获授权，机器人将退出。", parse_mode=None
+                )
                 await message.bot.leave_chat(message.chat.id)
             except TelegramForbiddenError:
                 logger.debug(f"机器人已不在群组中")

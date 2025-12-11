@@ -2,7 +2,9 @@
 
 import sys
 from pathlib import Path
+from typing import Any
 
+from langchain_openai import OpenAIEmbeddings
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
@@ -55,3 +57,29 @@ class Settings(BaseSettings):
 
 
 setting = Settings()
+
+
+def get_embeddings() -> OpenAIEmbeddings:
+    """获取嵌入模型实例"""
+    return OpenAIEmbeddings(
+        api_key=setting.EMBEDDING_API_KEY,
+        base_url=setting.EMBEDDING_BASE_URL,
+        model=setting.EMBEDDING_MODEL,
+        check_embedding_ctx_length=False,
+    )
+
+
+def get_index_config(embeddings: OpenAIEmbeddings) -> dict:
+    """获取向量索引配置"""
+    return {"dims": setting.EMBEDDING_DIMS, "embed": embeddings, "fields": ["value"]}
+
+
+def get_db_config() -> dict[str, Any]:
+    """获取数据库配置"""
+    return {
+        "host": setting.POSTGRES_HOST,
+        "port": setting.POSTGRES_PORT,
+        "database": setting.POSTGRES_DB,
+        "user": setting.POSTGRES_USER,
+        "password": setting.POSTGRES_PASSWORD,
+    }

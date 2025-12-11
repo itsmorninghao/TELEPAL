@@ -1,7 +1,6 @@
 """应用入口"""
 
 import asyncio
-import os
 import sys
 
 from aiogram import Bot, Dispatcher
@@ -14,10 +13,13 @@ from src.bot.middleware import (
     ErrorHandlingMiddleware,
     LoggingMiddleware,
 )
-from src.utils.db.checkpointer import init_checkpointer
-from src.utils.db.connection import close_pool, create_pool, health_check
-from src.utils.db.init_db import init_database
-from src.utils.db.store import init_store
+from src.database import (
+    close_engine,
+    close_pool,
+    create_pool,
+    health_check,
+)
+from src.database.init_db import init_database
 from src.utils.logger import setup_logger
 from src.utils.settings import setting
 
@@ -31,11 +33,8 @@ async def main():
         if not await health_check():
             raise Exception("数据库连接失败")
 
-        # 2. 执行数据库初始化
+        # 执行数据库初始化
         await init_database()
-
-        await init_checkpointer()
-        await init_store()
 
         bot = Bot(
             token=setting.TELEGRAM_BOT_TOKEN,
@@ -69,8 +68,9 @@ async def main():
         logger.error(f"Bot 运行出错: {e}", exc_info=True)
         sys.exit(1)
     finally:
-        # 清理资源：关闭统一的数据库连接池
-        await close_pool()
+        # 清理资源：关闭数据库连接
+        await close_pool()  # LangGraph 连接池
+        await close_engine()  # SQLAlchemy 引擎
         logger.info("Bot 已关闭")
 
 
