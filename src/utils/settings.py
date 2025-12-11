@@ -71,3 +71,14 @@ def get_embeddings() -> OpenAIEmbeddings:
 def get_index_config(embeddings: OpenAIEmbeddings) -> dict:
     """获取向量索引配置"""
     return {"dims": setting.EMBEDDING_DIMS, "embed": embeddings, "fields": ["value"]}
+
+
+def get_db_config() -> Dict[str, Any]:
+    """获取数据库配置"""
+    return {
+        "host": setting.POSTGRES_HOST,
+        "port": setting.POSTGRES_PORT,
+        "database": setting.POSTGRES_DB,
+        "user": setting.POSTGRES_USER,
+        "password": setting.POSTGRES_PASSWORD,
+    }

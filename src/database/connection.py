@@ -1,25 +1,12 @@
 """PostgreSQL 数据库连接池管理"""
 
-from typing import Any, Dict
-
 from psycopg import AsyncConnection
 from psycopg_pool import AsyncConnectionPool
 
-from src.utils.settings import setting
+from src.utils.settings import get_db_config
 
 # 全局连接池
 _pool: AsyncConnectionPool | None = None
-
-
-def get_db_config() -> Dict[str, Any]:
-    """获取数据库配置"""
-    return {
-        "host": setting.POSTGRES_HOST,
-        "port": setting.POSTGRES_PORT,
-        "database": setting.POSTGRES_DB,
-        "user": setting.POSTGRES_USER,
-        "password": setting.POSTGRES_PASSWORD,
-    }
 
 
 def _build_connection_string() -> str:
@@ -81,4 +68,3 @@ async def health_check() -> bool:
         return True
     except Exception:
         return False
-

@@ -266,4 +266,3 @@ async def list_whitelist(
                 await cur.execute("SELECT * FROM whitelist ORDER BY created_at DESC")
             rows = await cur.fetchall()
             return [WhitelistEntry.from_db_row(_row_to_dict(row, cur)) for row in rows]
-

@@ -72,4 +72,3 @@ async def get_user_location(user_id: int) -> Optional[Dict[str, Any]]:
                     "created_at": row[5],
                 }
             return None
-

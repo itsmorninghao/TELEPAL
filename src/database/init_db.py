@@ -3,11 +3,11 @@
 import asyncio
 import sys
 
-# 导入 settings 以初始化环境变量和路径
-import src.utils.settings  # noqa: F401
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.store.postgres.aio import AsyncPostgresStore
 
+# 导入 settings 以初始化环境变量和路径
+import src.utils.settings  # noqa: F401
 from src.database.connection import close_pool, create_pool
 from src.utils.logger import setup_logger
 from src.utils.settings import get_embeddings, get_index_config, setting
