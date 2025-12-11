@@ -46,6 +46,7 @@ async def save_user_location(
             )
             session.add(model)
 
+        await session.flush()
         return True
 
 
