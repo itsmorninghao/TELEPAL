@@ -14,6 +14,7 @@ from src.bot.middleware import (
     LoggingMiddleware,
 )
 from src.database import (
+    close_engine,
     close_pool,
     create_pool,
     health_check,
@@ -67,8 +68,9 @@ async def main():
         logger.error(f"Bot 运行出错: {e}", exc_info=True)
         sys.exit(1)
     finally:
-        # 清理资源：关闭统一的数据库连接池
-        await close_pool()
+        # 清理资源：关闭数据库连接
+        await close_pool()  # LangGraph 连接池
+        await close_engine()  # SQLAlchemy 引擎
         logger.info("Bot 已关闭")
 
 

@@ -2,7 +2,7 @@
 
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 
-from src.database.connection import get_pool
+from src.database.langgraph_pool import get_pool
 
 # 单例 checkpointer 实例
 _checkpointer_instance: AsyncPostgresSaver | None = None

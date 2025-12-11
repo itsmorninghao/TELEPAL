@@ -2,6 +2,7 @@
 
 import sys
 from pathlib import Path
+from typing import Any
 
 from langchain_openai import OpenAIEmbeddings
 from pydantic import Field
@@ -73,7 +74,7 @@ def get_index_config(embeddings: OpenAIEmbeddings) -> dict:
     return {"dims": setting.EMBEDDING_DIMS, "embed": embeddings, "fields": ["value"]}
 
 
-def get_db_config() -> Dict[str, Any]:
+def get_db_config() -> dict[str, Any]:
     """获取数据库配置"""
     return {
         "host": setting.POSTGRES_HOST,

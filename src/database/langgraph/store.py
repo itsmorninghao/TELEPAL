@@ -2,7 +2,7 @@
 
 from langgraph.store.postgres.aio import AsyncPostgresStore
 
-from src.database.connection import get_pool
+from src.database.langgraph_pool import get_pool
 from src.utils.settings import get_embeddings, get_index_config
 
 # 单例 store 实例
