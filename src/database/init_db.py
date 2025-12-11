@@ -1,6 +1,5 @@
 """数据库初始化脚本"""
 
-import asyncio
 import sys
 
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
@@ -10,7 +9,7 @@ from sqlalchemy import select
 # 导入 settings 以初始化环境变量和路径
 import src.utils.settings  # noqa: F401
 from src.database.engine import get_engine, get_session
-from src.database.langgraph_pool import close_pool, create_pool
+from src.database.langgraph_pool import create_pool
 from src.database.models import Base, UserPermissionModel, WhitelistEntryModel
 from src.utils.logger import setup_logger
 from src.utils.settings import get_embeddings, get_index_config, setting
@@ -101,12 +100,7 @@ async def init_database() -> None:
 
         pool = await create_pool()
         await _init_langgraph_tables(pool)
-        await close_pool()
 
     except Exception as e:
         logger.error(f"数据库初始化失败: {e}", exc_info=True)
         sys.exit(1)
-
-
-if __name__ == "__main__":
-    asyncio.run(init_database())
