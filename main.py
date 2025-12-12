@@ -7,7 +7,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
-from src.bot.admin_handlers import register_all_commands
+from src.bot.admin_handlers import admin_router
 from src.bot.handlers import router as handlers_router
 from src.bot.middleware import (
     ErrorHandlingMiddleware,
@@ -42,9 +42,6 @@ async def main():
         )
         dp = Dispatcher()
 
-        # 注册所有命令
-        register_all_commands()
-
         # 按顺序注册中间件
         # 注意：中间件的执行顺序与注册顺序相反，后进先出
         # 所以先注册的中间件最后执行
@@ -55,7 +52,9 @@ async def main():
         # 日志中间件
         dp.message.middleware(LoggingMiddleware())
 
-        # 注册消息处理器（统一处理所有消息，包括命令）
+        # 注册路由器
+        # 注意：顺序很重要，命令处理器（admin_router）应该先注册然后才是消息处理器（handlers_router）
+        dp.include_router(admin_router)
         dp.include_router(handlers_router)
 
         logger.info("telepal已启动")

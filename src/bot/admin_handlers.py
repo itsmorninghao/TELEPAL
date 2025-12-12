@@ -1,12 +1,16 @@
 """管理员命令处理器"""
 
 import logging
+from typing import Optional
 
-from aiogram.types import Message
+from aiogram import Router
+from aiogram.filters import Command, CommandObject
+from aiogram.types import KeyboardButton, Message, ReplyKeyboardMarkup
 
 from src.auth.models import UserRole
 from src.auth.service import check_super_admin, check_user_role_in_group
-from src.bot.commands import Command, command_registry
+from src.bot.commands import generate_help_text
+from src.bot.filters import PrivateChatFilter, RoleFilter
 from src.database import get_store
 from src.database.repositories.auth import (
     add_to_whitelist,
@@ -20,14 +24,22 @@ from src.database.repositories.auth import (
 
 logger = logging.getLogger(__name__)
 
+# 创建管理命令路由器
+admin_router = Router()
+
 
 # ==================== 群组授权命令 ====================
 
 
-async def cmd_group_authorize(message: Message):
+@admin_router.message(
+    Command("group_authorize"),
+    PrivateChatFilter(),
+    RoleFilter(["super_admin"]),
+)
+async def cmd_group_authorize(message: Message, command: CommandObject):
     """授权群组（仅超管）"""
-    # 解析参数
-    args = message.text.split()[1:] if message.text else []
+    args = command.args.split() if command.args else []
+
     if not args:
         await message.answer(
             "命令参数错误，请检查格式\n\n/group_authorize <chat_id> - 授权群组",
@@ -38,7 +50,7 @@ async def cmd_group_authorize(message: Message):
     try:
         chat_id = int(args[0])
         user_id = message.from_user.id
-        chat_title = message.chat.title if message.chat.title else None
+        chat_title: Optional[str] = message.chat.title if message.chat.title else None
 
         # 授权群组
         await authorize_group(chat_id, chat_title, user_id)
@@ -54,10 +66,15 @@ async def cmd_group_authorize(message: Message):
         await message.answer("操作失败，请稍后重试。", parse_mode=None)
 
 
-async def cmd_group_revoke(message: Message):
+@admin_router.message(
+    Command("group_revoke"),
+    PrivateChatFilter(),
+    RoleFilter(["super_admin"]),
+)
+async def cmd_group_revoke(message: Message, command: CommandObject):
     """撤销群组授权（仅超管）"""
-    # 解析参数
-    args = message.text.split()[1:] if message.text else []
+    args = command.args.split() if command.args else []
+
     if not args:
         await message.answer(
             "命令参数错误，请检查格式\n\n/group_revoke <chat_id> - 撤销群组授权",
@@ -85,6 +102,11 @@ async def cmd_group_revoke(message: Message):
         await message.answer("操作失败，请稍后重试。", parse_mode=None)
 
 
+@admin_router.message(
+    Command("group_list"),
+    PrivateChatFilter(),
+    RoleFilter(["super_admin"]),
+)
 async def cmd_group_list(message: Message):
     """查看所有已授权群组（仅超管）"""
     try:
@@ -110,10 +132,14 @@ async def cmd_group_list(message: Message):
 # ==================== 白名单管理命令 ====================
 
 
-async def cmd_whitelist_add(message: Message):
+@admin_router.message(
+    Command("whitelist_add"),
+    RoleFilter(["super_admin", "group_admin"]),
+)
+async def cmd_whitelist_add(message: Message, command: CommandObject):
     """添加白名单用户"""
     user_id = message.from_user.id
-    args = message.text.split()[1:] if message.text else []
+    args = command.args.split() if command.args else []
 
     if not args:
         await message.answer(
@@ -127,7 +153,7 @@ async def cmd_whitelist_add(message: Message):
 
         # 判断是超管还是群组管理员
         is_super = await check_super_admin(user_id)
-        chat_id = None
+        chat_id: Optional[int] = None
         chat_type = "private"
 
         if message.chat.type in ["group", "supergroup"]:
@@ -173,10 +199,14 @@ async def cmd_whitelist_add(message: Message):
         await message.answer("操作失败，请稍后重试。", parse_mode=None)
 
 
-async def cmd_whitelist_remove(message: Message):
+@admin_router.message(
+    Command("whitelist_remove"),
+    RoleFilter(["super_admin", "group_admin"]),
+)
+async def cmd_whitelist_remove(message: Message, command: CommandObject):
     """移除白名单用户"""
     user_id = message.from_user.id
-    args = message.text.split()[1:] if message.text else []
+    args = command.args.split() if command.args else []
 
     if not args:
         await message.answer(
@@ -190,7 +220,7 @@ async def cmd_whitelist_remove(message: Message):
 
         # 判断是超管还是群组管理员
         is_super = await check_super_admin(user_id)
-        chat_id = None
+        chat_id: Optional[int] = None
 
         if message.chat.type in ["group", "supergroup"]:
             chat_id = message.chat.id
@@ -241,15 +271,19 @@ async def cmd_whitelist_remove(message: Message):
         await message.answer("操作失败，请稍后重试。", parse_mode=None)
 
 
-async def cmd_whitelist_list(message: Message):
+@admin_router.message(
+    Command("whitelist_list"),
+    RoleFilter(["super_admin", "group_admin"]),
+)
+async def cmd_whitelist_list(message: Message, command: CommandObject):
     """查看白名单列表"""
     user_id = message.from_user.id
-    args = message.text.split()[1:] if message.text else []
+    args = command.args.split() if command.args else []
 
     try:
         # 判断是超管还是群组管理员
         is_super = await check_super_admin(user_id)
-        chat_id = None
+        chat_id: Optional[int] = None
 
         if message.chat.type in ["group", "supergroup"]:
             chat_id = message.chat.id
@@ -316,9 +350,15 @@ async def cmd_whitelist_list(message: Message):
 # ==================== 权限管理命令 ====================
 
 
-async def cmd_permission_set(message: Message):
+@admin_router.message(
+    Command("permission_set"),
+    PrivateChatFilter(),
+    RoleFilter(["super_admin"]),
+)
+async def cmd_permission_set(message: Message, command: CommandObject):
     """设置用户权限（仅超管）"""
-    args = message.text.split()[1:] if message.text else []
+    args = command.args.split() if command.args else []
+
     if len(args) < 2:
         await message.answer(
             "命令参数错误，请检查格式\n\n/permission_set <user_id> <role> - 设置用户权限\n角色: super_admin, user",
@@ -361,10 +401,11 @@ async def cmd_permission_set(message: Message):
 # ==================== 记忆管理命令 ====================
 
 
-async def cmd_memory_list(message: Message):
+@admin_router.message(Command("memory_list"))
+async def cmd_memory_list(message: Message, command: CommandObject):
     """查看长期记忆"""
     user_id = message.from_user.id
-    args = message.text.split()[1:] if message.text else []
+    args = command.args.split() if command.args else []
 
     try:
         # 判断是超管还是普通用户
@@ -420,10 +461,11 @@ async def cmd_memory_list(message: Message):
         await message.answer("操作失败，请稍后重试。", parse_mode=None)
 
 
-async def cmd_memory_delete(message: Message):
+@admin_router.message(Command("memory_delete"))
+async def cmd_memory_delete(message: Message, command: CommandObject):
     """删除长期记忆"""
     user_id = message.from_user.id
-    args = message.text.split()[1:] if message.text else []
+    args = command.args.split() if command.args else []
 
     if not args:
         await message.answer(
@@ -464,10 +506,12 @@ async def cmd_memory_delete(message: Message):
 # ==================== Set Location 命令 ====================
 
 
+@admin_router.message(
+    Command("set_location"),
+    PrivateChatFilter(),
+)
 async def cmd_set_location(message: Message):
     """处理 /set_location 命令，请求用户位置信息"""
-    from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
-
     # 创建带位置请求按钮的键盘
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
@@ -485,6 +529,7 @@ async def cmd_set_location(message: Message):
 # ==================== Help 命令 ====================
 
 
+@admin_router.message(Command("help"))
 async def cmd_help(message: Message):
     """显示帮助信息，根据用户身份显示可用命令"""
     user_id = message.from_user.id
@@ -498,169 +543,10 @@ async def cmd_help(message: Message):
         role = await check_user_role_in_group(message.bot, chat_id, user_id)
         is_group_admin = role == "group_admin"
 
-    # 根据级别拼接命令字符串
-    help_text = "📋 可用命令列表\n\n"
+    # 确定用户角色
+    user_role = "super_admin" if is_super else "user"
 
-    # 超管级别
-    if is_super and chat_type == "private":
-        help_text += "🔴 超管命令：\n"
-        help_text += "• /group_authorize <chat_id> - 授权群组\n"
-        help_text += "• /group_revoke <chat_id> - 撤销群组授权\n"
-        help_text += "• /group_list - 查看所有已授权群组\n"
-        help_text += "• /permission_set <user_id> <role> - 设置用户权限\n"
-        help_text += "\n"
-
-    # 管理级别
-    if is_super or is_group_admin:
-        help_text += "🟡 管理命令：\n"
-        help_text += (
-            "• /whitelist_add <user_id> [private|group] [chat_id] - 添加白名单用户\n"
-        )
-        help_text += (
-            "• /whitelist_remove <user_id> [private|group] [chat_id] - 移除白名单用户\n"
-        )
-        help_text += "• /whitelist_list [private|group] [chat_id] - 查看白名单列表\n"
-        help_text += "\n"
-
-    # 普通用户级别
-    help_text += "🟢 普通命令：\n"
-    if chat_type == "private":
-        help_text += "• /set_location - 设置位置信息\n"
-    help_text += "• /memory_list [user_id] [query] - 查看长期记忆\n"
-    help_text += "• /memory_delete [user_id] <memory_key> - 删除长期记忆\n"
-    help_text += "• /help - 显示可用命令列表\n"
+    # 动态生成帮助文本
+    help_text = generate_help_text(user_role, chat_type, is_group_admin)
 
     await message.answer(help_text, parse_mode=None)
-
-
-# ==================== 注册所有命令 ====================
-
-
-def register_all_commands():
-    """注册所有命令到命令注册表"""
-
-    # 超管独占指令（仅私聊）
-    command_registry.register(
-        Command(
-            name="group_authorize",
-            description="授权群组",
-            usage="/group_authorize <chat_id> - 授权群组",
-            required_role="super_admin",
-            allowed_chat_types=["private"],
-            handler=cmd_group_authorize,
-        )
-    )
-
-    command_registry.register(
-        Command(
-            name="group_revoke",
-            description="撤销群组授权",
-            usage="/group_revoke <chat_id> - 撤销群组授权",
-            required_role="super_admin",
-            allowed_chat_types=["private"],
-            handler=cmd_group_revoke,
-        )
-    )
-
-    command_registry.register(
-        Command(
-            name="group_list",
-            description="查看所有已授权群组",
-            usage="/group_list - 查看所有已授权群组",
-            required_role="super_admin",
-            allowed_chat_types=["private"],
-            handler=cmd_group_list,
-        )
-    )
-
-    command_registry.register(
-        Command(
-            name="permission_set",
-            description="设置用户权限",
-            usage="/permission_set <user_id> <role> - 设置用户权限\n角色: super_admin, user",
-            required_role="super_admin",
-            allowed_chat_types=["private"],
-            handler=cmd_permission_set,
-        )
-    )
-
-    # 管理指令（群组和私聊）
-    command_registry.register(
-        Command(
-            name="whitelist_add",
-            description="添加白名单用户",
-            usage="/whitelist_add <user_id> [private|group] [chat_id] - 添加白名单用户",
-            required_role="group_admin",
-            allowed_chat_types=["private", "group"],
-            handler=cmd_whitelist_add,
-        )
-    )
-
-    command_registry.register(
-        Command(
-            name="whitelist_remove",
-            description="移除白名单用户",
-            usage="/whitelist_remove <user_id> [private|group] [chat_id] - 移除白名单用户",
-            required_role="group_admin",
-            allowed_chat_types=["private", "group"],
-            handler=cmd_whitelist_remove,
-        )
-    )
-
-    command_registry.register(
-        Command(
-            name="whitelist_list",
-            description="查看白名单列表",
-            usage="/whitelist_list [private|group] [chat_id] - 查看白名单列表",
-            required_role="group_admin",
-            allowed_chat_types=["private", "group"],
-            handler=cmd_whitelist_list,
-        )
-    )
-
-    # 普通指令（群组和私聊）
-    command_registry.register(
-        Command(
-            name="memory_list",
-            description="查看长期记忆",
-            usage="/memory_list [user_id] [query] - 查看长期记忆",
-            required_role="user",
-            allowed_chat_types=["private", "group"],
-            handler=cmd_memory_list,
-        )
-    )
-
-    command_registry.register(
-        Command(
-            name="memory_delete",
-            description="删除长期记忆",
-            usage="/memory_delete [user_id] <memory_key> - 删除长期记忆",
-            required_role="user",
-            allowed_chat_types=["private", "group"],
-            handler=cmd_memory_delete,
-        )
-    )
-
-    # Start 命令（所有用户可用）
-    command_registry.register(
-        Command(
-            name="set_location",
-            description="开始使用机器人",
-            usage="/start - 开始使用机器人",
-            required_role="user",
-            allowed_chat_types=["private"],
-            handler=cmd_set_location,
-        )
-    )
-
-    # Help 命令（所有用户可用）
-    command_registry.register(
-        Command(
-            name="help",
-            description="显示帮助信息",
-            usage="/help - 显示可用命令列表",
-            required_role="user",
-            allowed_chat_types=["private", "group"],
-            handler=cmd_help,
-        )
-    )

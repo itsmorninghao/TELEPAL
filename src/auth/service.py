@@ -4,7 +4,6 @@ import logging
 from typing import Optional
 
 from aiogram import Bot
-from aiogram.types import ChatMember, Message
 
 from src.auth.models import UserRole
 from src.database.repositories.auth import (
@@ -46,28 +45,6 @@ async def check_whitelist(
     return await is_user_whitelisted(user_id, chat_type, chat_id)
 
 
-async def check_permission(
-    bot: Bot,
-    user_id: int,
-    chat_type: str,
-    chat_id: Optional[int] = None,
-    require_super_admin: bool = False,
-    require_group_admin: bool = False,
-) -> bool:
-    """综合权限检查"""
-    # 1. 检查超管权限
-    if require_super_admin:
-        if not await check_super_admin(user_id):
-            return False
-
-    # 2. 检查群组管理员权限
-    if require_group_admin and chat_type == "group" and chat_id:
-        if not await check_group_admin(bot, chat_id, user_id):
-            return False
-
-    return True
-
-
 async def check_private_authorization(user_id: int) -> bool:
     """检查私聊授权（超管或私聊白名单）"""
     # 检查是否是超管
@@ -94,56 +71,3 @@ async def check_user_role_in_group(bot: Bot, chat_id: int, user_id: int) -> str:
 
     # 4. 都不符合
     return "unauthorized"
-
-
-def is_command(text: Optional[str]) -> bool:
-    """判断是否是命令（以 / 开头）"""
-    if not text:
-        return False
-    return text.strip().startswith("/")
-
-
-async def is_mention_bot(message: Message, bot: Bot) -> bool:
-    """判断消息是否 @ 了机器人"""
-    if message.chat.type not in ["group", "supergroup"]:
-        return False
-
-    # 检查消息实体中是否有 @ 提及
-    if message.entities:
-        bot_me = await bot.get_me()
-        for entity in message.entities:
-            if entity.type == "mention":
-                # 提取 @ 提及的用户名
-                if message.text:
-                    mention = message.text[
-                        entity.offset : entity.offset + entity.length
-                    ]
-                    if mention == f"@{bot_me.username}":
-                        return True
-            elif entity.type == "text_mention":
-                # 检查是否提及了机器人
-                if entity.user and entity.user.id == bot_me.id:
-                    return True
-            elif entity.type == "bot_command":
-                # 这种情况没有被处理!就是/memory_list@bot_username这样的形式
-                if message.text and "@" in message.text:
-                    command_text = message.text[
-                        entity.offset : entity.offset + entity.length
-                    ]
-                    if f"@{bot_me.username}" in command_text:
-                        return True
-
-    return False
-
-
-async def is_reply_to_bot(message: Message, bot: Bot) -> bool:
-    """判断消息是否回复了机器人发送的消息"""
-    if not message.reply_to_message:
-        return False
-
-    # 检查被回复的消息是否是机器人发送的
-    bot_me = await bot.get_me()
-    return (
-        message.reply_to_message.from_user is not None
-        and message.reply_to_message.from_user.id == bot_me.id
-    )

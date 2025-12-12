@@ -14,13 +14,13 @@ from src.agent.state import AgentState
 from src.auth.service import (
     check_group_authorized,
     check_private_authorization,
-    check_super_admin,
     check_user_role_in_group,
-    is_command,
-    is_mention_bot,
-    is_reply_to_bot,
 )
-from src.bot.commands import command_registry
+from src.bot.filters import (
+    group_mention_filter,
+    not_command_filter,
+    reply_to_bot_filter,
+)
 from src.bot.location_service import get_timezone_from_location, save_user_location
 from src.utils.settings import setting
 
@@ -36,75 +36,6 @@ def convert_to_telegram_markdown(text: str) -> str:
     except Exception as e:
         logger.warning(f"Markdown 转换失败: {e}")
         return text
-
-
-async def route_command(message: Message) -> bool:
-    """命令路由处理，返回是否成功处理"""
-    user_message = message.text or message.caption or ""
-    if not user_message or not user_message.startswith("/"):
-        return False
-
-    # 提取命令名（去掉 / 前缀，取第一个单词）
-    parts = user_message.strip().split()
-    if not parts or not parts[0].startswith("/"):
-        return False
-    command_name = parts[0][1:]  # 去掉 / 前缀
-    logger.info(f"command_name: {command_name}")
-    if "@" in command_name:
-        command_name = command_name.split("@")[0]
-    logger.info(f"command_name: {command_name}")
-    if not command_name:
-        return False
-
-    # 1. 检查命令是否存在
-    command = command_registry.get(command_name)
-    if not command:
-        await message.answer("不存在此命令\n\n使用 /help 查看可用命令列表")
-        return True
-
-    # 2. 场景检查
-    chat_type = "private" if message.chat.type == "private" else "group"
-    if chat_type not in command.allowed_chat_types:
-        if chat_type == "private":
-            await message.answer("此命令仅限群组使用\n\n使用 /help 查看可用命令列表")
-        else:
-            await message.answer("此命令仅限私聊使用\n\n使用 /help 查看可用命令列表")
-        return True
-
-    # 3. 权限检查
-    if not message.from_user:
-        logger.warning("命令消息没有 from_user")
-        return False
-    user_id = message.from_user.id
-
-    # 对于管理指令，需要特殊处理
-    if command.required_role == "group_admin":
-        if chat_type == "private":
-            # 群组管理员在私聊中没有管理权限，只有超管可以
-            if not await check_super_admin(user_id):
-                await message.answer("权限不足\n\n使用 /help 查看可用命令列表")
-                return True
-        else:
-            # 在群组中，检查是否是群管或超管
-            user_role = await check_user_role_in_group(
-                message.bot, message.chat.id, user_id
-            )
-            if user_role not in ["super_admin", "group_admin"]:
-                await message.answer("权限不足\n\n使用 /help 查看可用命令列表")
-                return True
-    elif command.required_role == "super_admin":
-        if not await check_super_admin(user_id):
-            await message.answer("权限不足\n\n使用 /help 查看可用命令列表")
-            return True
-
-    # 4. 执行命令（参数验证由 handler 自行处理）
-    try:
-        await command.handler(message)
-    except Exception as e:
-        logger.error(f"执行命令 {command_name} 时出错: {e}", exc_info=True)
-        await message.answer("命令执行失败，请稍后重试。")
-
-    return True
 
 
 async def handle_chat(message: Message) -> None:
@@ -214,6 +145,7 @@ async def handle_location(message: Message) -> None:
 
 @router.message(F.location)
 async def handle_location_message(message: Message):
+    """处理位置消息"""
     latitude = message.location.latitude
     longitude = message.location.longitude
 
@@ -226,9 +158,9 @@ async def handle_location_message(message: Message):
     await handle_location(message)
 
 
-@router.message()
+@router.message(not_command_filter)
 async def handle_message(message: Message):
-    """统一的消息处理入口"""
+    """处理非命令消息（AI 对话）"""
     chat_type = "private" if message.chat.type == "private" else "group"
     user_id = message.from_user.id if message.from_user else None
 
@@ -237,25 +169,15 @@ async def handle_message(message: Message):
 
     # 私聊处理流程
     if chat_type == "private":
-        # 1. 私聊权限检查
         is_authorized = await check_private_authorization(user_id)
         if not is_authorized:
             await message.answer("未获授权")
             return
 
-        # 2. 检查是否是命令
-        if is_command(message.text or message.caption):
-            # 命令路由
-            handled = await route_command(message)
-            if handled:
-                return
-        else:
-            # AI 响应
-            await handle_chat(message)
+        await handle_chat(message)
 
     # 群组处理流程
     else:
-        # 1. 群组授权检查
         is_group_authorized = await check_group_authorized(message.chat.id)
         if not is_group_authorized:
             try:
@@ -264,20 +186,19 @@ async def handle_message(message: Message):
                 )
                 await message.bot.leave_chat(message.chat.id)
             except TelegramForbiddenError:
-                logger.debug(f"机器人已不在群组中")
+                logger.debug("机器人已不在群组中")
             except Exception as e:
                 logger.error(f"退群失败: {e}", exc_info=True)
             return
 
-        # 2. 检查是否 @ 机器人或回复机器人
-        is_mention = await is_mention_bot(message, message.bot)
-        is_reply = await is_reply_to_bot(message, message.bot)
+        # 检查是否 @ 机器人或回复机器人
+        is_mention = await group_mention_filter(message, bot=message.bot)
+        is_reply = await reply_to_bot_filter(message, bot=message.bot)
 
         if not (is_mention or is_reply):
-            # 静默忽略
             return
 
-        # 3. 用户身份判定
+        # 用户身份判定
         user_role = await check_user_role_in_group(
             message.bot, message.chat.id, user_id
         )
@@ -285,12 +206,4 @@ async def handle_message(message: Message):
             await message.answer("您未获本群授权")
             return
 
-        # 4. 检查是否是命令
-        if is_command(message.text or message.caption):
-            # 命令路由
-            handled = await route_command(message)
-            if handled:
-                return
-        else:
-            # AI 响应
-            await handle_chat(message)
+        await handle_chat(message)
