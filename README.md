@@ -109,8 +109,10 @@ uv run python main.py
 
 | 命令 | 说明 |
 |------|------|
-| `/memory_list [query]` | 查看长期记忆 |
-| `/memory_delete <key>` | 删除记忆 |
+| `/memory_list [user_id] [query]` | 查看长期记忆（超管可指定用户） |
+| `/memory_delete [user_id] <key>` | 删除记忆（超管可指定用户） |
+| `/set_location` | 设置位置信息以获取时区（仅私聊） |
+| `/help` | 显示可用命令列表（根据身份动态显示） |
 
 ## 项目结构
 
@@ -125,17 +127,31 @@ TelePal/
 │   │   ├── prompts.py   # 系统提示词
 │   │   └── state.py     # 状态定义
 │   ├── auth/            # 权限系统
-│   │   ├── database.py  # 权限数据库操作
-│   │   ├── models.py    # 数据模型
+│   │   ├── models.py    # 领域模型（dataclass）
 │   │   └── service.py   # 权限检查服务
 │   ├── bot/             # Telegram Bot
 │   │   ├── handlers.py  # 消息处理
 │   │   ├── admin_handlers.py  # 管理命令
 │   │   ├── commands.py  # 命令注册
+│   │   ├── filters.py   # 消息过滤器
+│   │   ├── location_service.py  # 位置/时区服务
 │   │   └── middleware.py
+│   ├── database/        # 数据库模块
+│   │   ├── engine.py    # SQLAlchemy 异步引擎
+│   │   ├── langgraph_pool.py  # LangGraph 连接池
+│   │   ├── models.py    # ORM 模型
+│   │   ├── init_db.py   # 数据库初始化
+│   │   ├── langgraph/   # LangGraph 存储
+│   │   │   ├── checkpointer.py  # 对话记忆
+│   │   │   └── store.py # 长期记忆/向量存储
+│   │   └── repositories/  # 数据访问层
+│   │       ├── auth.py  # 权限相关
+│   │       └── profiles.py  # 用户资料
 │   └── utils/
-│       ├── db/          # 数据库连接
 │       ├── tools/       # Agent 工具
+│       │   ├── memory.py   # 记忆工具
+│       │   ├── scraper.py  # 网页抓取
+│       │   └── search.py   # 网络搜索
 │       ├── logger.py
 │       └── settings.py
 └── logs/                # 日志目录
