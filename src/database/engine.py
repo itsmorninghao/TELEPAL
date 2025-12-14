@@ -89,4 +89,3 @@ async def close_engine() -> None:
         await _engine.dispose()
         _engine = None
         _session_factory = None
-

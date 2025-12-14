@@ -10,7 +10,7 @@ from psycopg_pool import AsyncConnectionPool
 
 from src.utils.settings import get_db_config
 
-# 全局连接池以支持 LangGraph 
+# 全局连接池以支持 LangGraph
 _pool: AsyncConnectionPool | None = None
 
 
@@ -73,4 +73,3 @@ async def health_check() -> bool:
         return True
     except Exception:
         return False
-

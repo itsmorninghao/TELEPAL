@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from sqlalchemy import select, update, delete
+from sqlalchemy import delete, select, update
 
 from src.auth.models import AuthorizedGroup, UserPermission, UserRole, WhitelistEntry
 from src.database.engine import get_session
@@ -11,7 +11,6 @@ from src.database.models import (
     UserPermissionModel,
     WhitelistEntryModel,
 )
-
 
 # ==================== 用户权限操作 ====================
 
@@ -78,7 +77,9 @@ async def is_group_authorized(chat_id: int) -> bool:
 async def get_authorized_group(chat_id: int) -> Optional[AuthorizedGroup]:
     """获取授权群组信息"""
     async with get_session() as session:
-        stmt = select(AuthorizedGroupModel).where(AuthorizedGroupModel.chat_id == chat_id)
+        stmt = select(AuthorizedGroupModel).where(
+            AuthorizedGroupModel.chat_id == chat_id
+        )
         result = await session.execute(stmt)
         model = result.scalar_one_or_none()
 
@@ -91,7 +92,9 @@ async def authorize_group(
     """授权群组（存在则激活并更新，不存在则创建）"""
     async with get_session() as session:
         # 先查询是否存在
-        stmt = select(AuthorizedGroupModel).where(AuthorizedGroupModel.chat_id == chat_id)
+        stmt = select(AuthorizedGroupModel).where(
+            AuthorizedGroupModel.chat_id == chat_id
+        )
         result = await session.execute(stmt)
         model = result.scalar_one_or_none()
 

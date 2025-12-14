@@ -2,10 +2,10 @@
 
 import logging
 
+from src.agent.tools.memory import save_memory, search_memories
+from src.agent.tools.scraper import scrape_webpage
+from src.agent.tools.search import tavily_search
 from src.utils.settings import setting
-from src.utils.tools.memory import save_memory, search_memories
-from src.utils.tools.scraper import scrape_webpage
-from src.utils.tools.search import tavily_search
 
 logger = logging.getLogger(__name__)
 
