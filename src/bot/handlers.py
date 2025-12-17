@@ -9,7 +9,8 @@ from aiogram.exceptions import TelegramForbiddenError
 from aiogram.types import Message, ReplyKeyboardRemove
 from langchain_core.messages import AIMessage, HumanMessage
 
-from src.agent.graph import get_compiled_graph, limit_messages
+from src.agent.graph import get_compiled_graph
+from src.utils.langchain_utils import limit_messages
 from src.agent.state import AgentState
 from src.auth.service import (
     check_group_authorized,
