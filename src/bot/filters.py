@@ -99,7 +99,9 @@ class GroupMentionFilter(Filter):
 
             # bot_command 类型：/command@bot_username
             elif entity.type == "bot_command" and message.text and "@" in message.text:
-                command_text = message.text[entity.offset : entity.offset + entity.length]
+                command_text = message.text[
+                    entity.offset : entity.offset + entity.length
+                ]
                 if f"@{bot_username}" in command_text:
                     return True
 

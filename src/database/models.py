@@ -7,7 +7,16 @@
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import BigInteger, Boolean, DateTime, Double, Index, String, UniqueConstraint, func
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    DateTime,
+    Double,
+    Index,
+    String,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 if TYPE_CHECKING:
@@ -93,7 +102,9 @@ class WhitelistEntryModel(Base):
     created_by: Mapped[Optional[int]] = mapped_column(BigInteger)
 
     __table_args__ = (
-        UniqueConstraint("user_id", "chat_type", "chat_id", name="uq_whitelist_user_chat"),
+        UniqueConstraint(
+            "user_id", "chat_type", "chat_id", name="uq_whitelist_user_chat"
+        ),
         Index("idx_whitelist_user_id", "user_id"),
         Index("idx_whitelist_chat", "chat_type", "chat_id"),
     )
@@ -129,4 +140,3 @@ class UserProfileModel(Base):
     )
 
     __table_args__ = (Index("idx_user_profiles_user_id", "user_id"),)
-
