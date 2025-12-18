@@ -132,8 +132,8 @@ TelePal/
 │   │   ├── models.py    # 领域模型（dataclass）
 │   │   └── service.py   # 权限检查服务
 │   ├── bot/             # Telegram Bot
-│   │   ├── handlers.py  # 消息处理
-│   │   ├── admin_handlers.py  # 管理命令
+│   │   ├── message_handlers.py  # 消息处理
+│   │   ├── command_handlers.py  # 命令处理
 │   │   ├── commands.py  # 命令注册
 │   │   ├── filters.py   # 消息过滤器
 │   │   ├── location_service.py  # 位置/时区服务

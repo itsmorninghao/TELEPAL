@@ -1,7 +1,7 @@
 """命令元数据定义
 
 此模块定义命令的元数据，用于生成帮助信息等用途。
-实际的命令路由由 Aiogram 装饰器处理（见 admin_handlers.py）。
+实际的命令路由由 Aiogram 装饰器处理（command_handlers.py）。
 """
 
 from dataclasses import dataclass

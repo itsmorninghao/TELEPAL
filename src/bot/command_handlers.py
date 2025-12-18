@@ -1,4 +1,4 @@
-"""管理员命令处理器"""
+"""命令处理器"""
 
 import logging
 from typing import Optional
@@ -24,14 +24,14 @@ from src.database.repositories.auth import (
 
 logger = logging.getLogger(__name__)
 
-# 创建管理命令路由器
-admin_router = Router()
+# 创建命令路由器
+command_router = Router()
 
 
 # ==================== 群组授权命令 ====================
 
 
-@admin_router.message(
+@command_router.message(
     Command("group_authorize"),
     PrivateChatFilter(),
     RoleFilter(["super_admin"]),
@@ -66,7 +66,7 @@ async def cmd_group_authorize(message: Message, command: CommandObject):
         await message.answer("操作失败，请稍后重试。", parse_mode=None)
 
 
-@admin_router.message(
+@command_router.message(
     Command("group_revoke"),
     PrivateChatFilter(),
     RoleFilter(["super_admin"]),
@@ -102,7 +102,7 @@ async def cmd_group_revoke(message: Message, command: CommandObject):
         await message.answer("操作失败，请稍后重试。", parse_mode=None)
 
 
-@admin_router.message(
+@command_router.message(
     Command("group_list"),
     PrivateChatFilter(),
     RoleFilter(["super_admin"]),
@@ -132,7 +132,7 @@ async def cmd_group_list(message: Message):
 # ==================== 白名单管理命令 ====================
 
 
-@admin_router.message(
+@command_router.message(
     Command("whitelist_add"),
     RoleFilter(["super_admin", "group_admin"]),
 )
@@ -199,7 +199,7 @@ async def cmd_whitelist_add(message: Message, command: CommandObject):
         await message.answer("操作失败，请稍后重试。", parse_mode=None)
 
 
-@admin_router.message(
+@command_router.message(
     Command("whitelist_remove"),
     RoleFilter(["super_admin", "group_admin"]),
 )
@@ -271,7 +271,7 @@ async def cmd_whitelist_remove(message: Message, command: CommandObject):
         await message.answer("操作失败，请稍后重试。", parse_mode=None)
 
 
-@admin_router.message(
+@command_router.message(
     Command("whitelist_list"),
     RoleFilter(["super_admin", "group_admin"]),
 )
@@ -350,7 +350,7 @@ async def cmd_whitelist_list(message: Message, command: CommandObject):
 # ==================== 权限管理命令 ====================
 
 
-@admin_router.message(
+@command_router.message(
     Command("permission_set"),
     PrivateChatFilter(),
     RoleFilter(["super_admin"]),
@@ -401,7 +401,7 @@ async def cmd_permission_set(message: Message, command: CommandObject):
 # ==================== 记忆管理命令 ====================
 
 
-@admin_router.message(Command("memory_list"))
+@command_router.message(Command("memory_list"))
 async def cmd_memory_list(message: Message, command: CommandObject):
     """查看长期记忆"""
     user_id = message.from_user.id
@@ -461,7 +461,7 @@ async def cmd_memory_list(message: Message, command: CommandObject):
         await message.answer("操作失败，请稍后重试。", parse_mode=None)
 
 
-@admin_router.message(Command("memory_delete"))
+@command_router.message(Command("memory_delete"))
 async def cmd_memory_delete(message: Message, command: CommandObject):
     """删除长期记忆"""
     user_id = message.from_user.id
@@ -506,7 +506,7 @@ async def cmd_memory_delete(message: Message, command: CommandObject):
 # ==================== Set Location 命令 ====================
 
 
-@admin_router.message(
+@command_router.message(
     Command("set_location"),
     PrivateChatFilter(),
 )
@@ -529,7 +529,7 @@ async def cmd_set_location(message: Message):
 # ==================== Help 命令 ====================
 
 
-@admin_router.message(Command("help"))
+@command_router.message(Command("help"))
 async def cmd_help(message: Message):
     """显示帮助信息，根据用户身份显示可用命令"""
     user_id = message.from_user.id
