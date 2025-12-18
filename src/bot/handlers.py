@@ -3,14 +3,13 @@
 import logging
 from typing import Optional
 
-import telegramify_markdown
 from aiogram import F, Router
 from aiogram.exceptions import TelegramForbiddenError
 from aiogram.types import Message, ReplyKeyboardRemove
 from langchain_core.messages import AIMessage, HumanMessage
+from telegramify_markdown import markdownify
 
 from src.agent.graph import get_compiled_graph
-from src.utils.langchain_utils import limit_messages
 from src.agent.state import AgentState
 from src.auth.service import (
     check_group_authorized,
@@ -23,20 +22,12 @@ from src.bot.filters import (
     reply_to_bot_filter,
 )
 from src.bot.location_service import get_timezone_from_location, save_user_location
+from src.utils.langchain_utils import limit_messages
 from src.utils.settings import setting
 
 logger = logging.getLogger(__name__)
 
 router = Router()
-
-
-def convert_to_telegram_markdown(text: str) -> str:
-    """使用 telegramify-markdown 库进行转换"""
-    try:
-        return telegramify_markdown.markdownify(text)
-    except Exception as e:
-        logger.warning(f"Markdown 转换失败: {e}")
-        return text
 
 
 async def handle_chat(message: Message) -> None:
@@ -98,7 +89,7 @@ async def handle_chat(message: Message) -> None:
         reply_content = ai_messages[-1].content
 
         # 将标准 Markdown 转换为 Telegram MarkdownV2 格式
-        reply_content = convert_to_telegram_markdown(str(reply_content))
+        reply_content = markdownify(str(reply_content))
 
         # 检查消息长度
         if len(reply_content) > setting.MAX_MESSAGE_LENGTH:

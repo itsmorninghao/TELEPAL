@@ -13,6 +13,7 @@ from src.bot.middleware import (
     ErrorHandlingMiddleware,
     LoggingMiddleware,
 )
+from src.bot.scheduler_service import get_scheduler_service
 from src.database import (
     close_engine,
     close_pool,
@@ -42,6 +43,10 @@ async def main():
         )
         dp = Dispatcher()
 
+        # 初始化定时任务调度器
+        scheduler_service = get_scheduler_service()
+        await scheduler_service.initialize(bot)
+
         # 按顺序注册中间件
         # 注意：中间件的执行顺序与注册顺序相反，后进先出
         # 所以先注册的中间件最后执行
@@ -67,7 +72,11 @@ async def main():
         logger.error(f"Bot 运行出错: {e}", exc_info=True)
         sys.exit(1)
     finally:
-        # 清理资源：关闭数据库连接
+        # 关闭定时任务调度器
+        scheduler_service = get_scheduler_service()
+        await scheduler_service.shutdown()
+
+        # 关闭数据库连接
         await close_pool()  # LangGraph 连接池
         await close_engine()  # SQLAlchemy 引擎
         logger.info("Bot 已关闭")

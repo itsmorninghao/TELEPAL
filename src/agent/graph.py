@@ -1,22 +1,24 @@
 """LangGraph Graph 定义和编排"""
 
 import logging
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, Tuple
 
 from langchain.agents import create_agent
 from langchain_core.messages import (
     AIMessage,
-    BaseMessage,
     HumanMessage,
-    RemoveMessage,
 )
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph
 
 from src.agent.prompts import system_prompt_template
 from src.agent.state import AgentState
-from src.agent.tools import get_available_tools
-from src.agent.tools.memory import user_id_context
+from src.agent.tools import (
+    chat_id_context,
+    chat_type_context,
+    get_available_tools,
+    user_id_context,
+)
 from src.database import get_checkpointer
 from src.utils.langchain_utils import limit_messages
 from src.utils.settings import setting
@@ -54,12 +56,18 @@ def create_agent_node(agent, user_id: int):
         )
 
         try:
-            # 设置用户 ID 上下文
+            # 设置上下文变量
             user_id_context.set(state["user_id"])
+            chat_type_context.set(state["chat_type"])
+            # chat_id: 私聊时为 user_id，群聊时为 chat_id
+            effective_chat_id = (
+                state["chat_id"] if state["chat_id"] else state["user_id"]
+            )
+            chat_id_context.set(effective_chat_id)
 
             # 记录上下文长度
             input_len = len(context_messages)
-            
+
             result = await agent.ainvoke({"messages": context_messages})
 
             result_messages = result.get("messages", [])
@@ -131,7 +139,7 @@ async def get_compiled_graph(
     agent = create_agent(
         model=llm,
         tools=tools,
-        prompt=system_prompt,
+        system_prompt=system_prompt,
     )
 
     workflow = create_agent_graph(agent, user_id)

@@ -29,7 +29,7 @@ from src.database.langgraph_pool import (
 )
 
 # 业务数据访问层
-from src.database.repositories import auth, profiles
+from src.database.repositories import auth, profiles, scheduled_tasks
 
 __all__ = [
     # SQLAlchemy 引擎
@@ -47,4 +47,5 @@ __all__ = [
     # 业务 repositories
     "auth",
     "profiles",
+    "scheduled_tasks",
 ]

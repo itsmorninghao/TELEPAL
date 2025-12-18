@@ -27,4 +27,3 @@ def limit_messages(messages: List[BaseMessage], max_count: int) -> List[BaseMess
         f"消息条数超过限制 {max_count}，已从 {len(messages)} 条截断为 {len(trimmed_messages)} 条"
     )
     return cast(List[BaseMessage], trimmed_messages)
-

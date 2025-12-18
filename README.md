@@ -8,6 +8,7 @@
 - **长期记忆** - 使用向量数据库存储用户偏好和重要信息
 - **网络搜索** - 集成 Tavily Search，获取实时信息
 - **网页抓取** - 抓取并解析网页内容
+- **定时任务/提醒** - 支持自然语言创建定时提醒，系统重启后自动恢复
 - **权限管理** - 超管、群管、白名单三级权限体系
 - **群组支持** - 支持私聊和群组，群组需 @ 或回复触发
 
@@ -16,6 +17,7 @@
 - [aiogram](https://github.com/aiogram/aiogram) - Telegram Bot 框架
 - [LangGraph](https://github.com/langchain-ai/langgraph) - Agent 编排
 - [PostgreSQL](https://www.postgresql.org/) - 对话历史和权限存储
+- [APScheduler](https://github.com/agronholm/apscheduler) - 定时任务调度
 - [Tavily](https://tavily.com/) - 网络搜索（可选）
 
 ## 快速开始
@@ -135,6 +137,7 @@ TelePal/
 │   │   ├── commands.py  # 命令注册
 │   │   ├── filters.py   # 消息过滤器
 │   │   ├── location_service.py  # 位置/时区服务
+│   │   ├── scheduler_service.py  # 定时任务调度服务
 │   │   └── middleware.py
 │   ├── database/        # 数据库模块
 │   │   ├── engine.py    # SQLAlchemy 异步引擎
@@ -146,12 +149,16 @@ TelePal/
 │   │   │   └── store.py # 长期记忆/向量存储
 │   │   └── repositories/  # 数据访问层
 │   │       ├── auth.py  # 权限相关
-│   │       └── profiles.py  # 用户资料
+│   │       ├── profiles.py  # 用户资料
+│   │       └── scheduled_tasks.py  # 定时任务
+│   ├── agent/           # LangGraph Agent
+│   │   └── tools/       # Agent 工具
+│   │       ├── memory.py   # 记忆工具
+│   │       ├── scheduler.py  # 定时任务工具
+│   │       ├── scraper.py  # 网页抓取
+│   │       ├── search.py   # 网络搜索
+│   │       └── time.py    # 时间工具
 │   └── utils/
-│       ├── tools/       # Agent 工具
-│       │   ├── memory.py   # 记忆工具
-│       │   ├── scraper.py  # 网页抓取
-│       │   └── search.py   # 网络搜索
 │       ├── logger.py
 │       └── settings.py
 └── logs/                # 日志目录
@@ -159,7 +166,8 @@ TelePal/
 
 ## 开发计划
 - [x] 让模型能够感知时间,兼容多时区
-- [ ] 能够生成/执行定时任务
+- [x] 基于自然语言的生成/执行定时任务
+- [ ] 准备采用supervisor的架构形式
 - [ ] 在群聊中能够识别出不同的人,而不是把所有人当成同一个人
 - [ ] 可能会做多会话管理,正在考虑是否需要这样的功能
 - [ ] 可能会考虑对SQLite的支持以简化部署

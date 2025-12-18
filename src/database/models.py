@@ -34,14 +34,23 @@ class UserPermissionModel(Base):
 
     __tablename__ = "user_permissions"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False)
-    role: Mapped[str] = mapped_column(String(20), nullable=False, default="user")
+    id: Mapped[int] = mapped_column(
+        primary_key=True, autoincrement=True, comment="主键ID"
+    )
+    user_id: Mapped[int] = mapped_column(
+        BigInteger, unique=True, nullable=False, comment="用户ID（Telegram用户ID）"
+    )
+    role: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="user", comment="用户角色（user/admin等）"
+    )
     created_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime, server_default=func.now()
+        DateTime, server_default=func.now(), comment="创建时间"
     )
     updated_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime, server_default=func.now(), onupdate=func.now()
+        DateTime,
+        server_default=func.now(),
+        onupdate=func.now(),
+        comment="更新时间",
     )
 
     def to_domain(self) -> "UserPermission":
@@ -62,14 +71,22 @@ class AuthorizedGroupModel(Base):
 
     __tablename__ = "authorized_groups"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    chat_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False)
-    chat_title: Mapped[Optional[str]] = mapped_column(String(255))
-    authorized_by: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    authorized_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime, server_default=func.now()
+    id: Mapped[int] = mapped_column(
+        primary_key=True, autoincrement=True, comment="主键ID"
     )
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    chat_id: Mapped[int] = mapped_column(
+        BigInteger, unique=True, nullable=False, comment="群组ID（Telegram聊天ID）"
+    )
+    chat_title: Mapped[Optional[str]] = mapped_column(String(255))
+    authorized_by: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, comment="授权人用户ID"
+    )
+    authorized_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, server_default=func.now(), comment="授权时间"
+    )
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, default=True, nullable=False, comment="是否启用"
+    )
 
     __table_args__ = (Index("idx_authorized_groups_chat_id", "chat_id"),)
 
@@ -92,14 +109,24 @@ class WhitelistEntryModel(Base):
 
     __tablename__ = "whitelist"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    chat_type: Mapped[str] = mapped_column(String(20), nullable=False)
-    chat_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-    created_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime, server_default=func.now()
+    id: Mapped[int] = mapped_column(
+        primary_key=True, autoincrement=True, comment="主键ID"
     )
-    created_by: Mapped[Optional[int]] = mapped_column(BigInteger)
+    user_id: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, comment="用户ID（Telegram用户ID）"
+    )
+    chat_type: Mapped[str] = mapped_column(
+        String(20), nullable=False, comment="聊天类型（private/group等）"
+    )
+    chat_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, comment="聊天ID（Telegram聊天ID，私聊时可为空）"
+    )
+    created_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, server_default=func.now(), comment="创建时间"
+    )
+    created_by: Mapped[Optional[int]] = mapped_column(
+        BigInteger, comment="创建人用户ID"
+    )
 
     __table_args__ = (
         UniqueConstraint(
@@ -128,15 +155,71 @@ class UserProfileModel(Base):
 
     __tablename__ = "user_profiles"
 
-    user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    latitude: Mapped[float] = mapped_column(Double, nullable=False)
-    longitude: Mapped[float] = mapped_column(Double, nullable=False)
-    timezone: Mapped[Optional[str]] = mapped_column(String(100))
+    user_id: Mapped[int] = mapped_column(
+        BigInteger, primary_key=True, comment="用户ID（Telegram用户ID，主键）"
+    )
+    latitude: Mapped[float] = mapped_column(Double, nullable=False, comment="纬度")
+    longitude: Mapped[float] = mapped_column(Double, nullable=False, comment="经度")
+    timezone: Mapped[Optional[str]] = mapped_column(
+        String(100), comment="时区（如：Asia/Shanghai）"
+    )
     location_updated_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime, server_default=func.now()
+        DateTime, server_default=func.now(), comment="位置更新时间"
     )
     created_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime, server_default=func.now()
+        DateTime, server_default=func.now(), comment="创建时间"
     )
 
     __table_args__ = (Index("idx_user_profiles_user_id", "user_id"),)
+
+
+class ScheduledTaskModel(Base):
+    """定时任务表 ORM 模型
+
+    用于存储用户通过自然语言创建的定时提醒任务。
+    支持私聊和群聊场景，任务到期后通过 APScheduler 触发回调发送提醒消息。
+    """
+
+    __tablename__ = "scheduled_tasks"
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True, autoincrement=True, comment="主键ID"
+    )
+    user_id: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, index=True, comment="用户ID（Telegram用户ID）"
+    )
+    chat_id: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, index=True, comment="聊天ID（Telegram聊天ID）"
+    )
+    chat_type: Mapped[str] = mapped_column(
+        String(20), nullable=False, comment="聊天类型（'private' 或 'group'）"
+    )
+    content: Mapped[str] = mapped_column(
+        String(500), nullable=False, comment="任务内容（提醒消息内容）"
+    )
+    execute_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        index=True,
+        comment="执行时间（任务到期时间，带时区）",
+    )
+    is_executed: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+        index=True,
+        comment="是否已执行",
+    )
+    created_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        comment="创建时间（带时区）",
+    )
+    executed_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), comment="实际执行时间（带时区）"
+    )
+
+    __table_args__ = (
+        Index("idx_scheduled_tasks_user_execute", "user_id", "execute_at"),
+        Index("idx_scheduled_tasks_pending", "is_executed", "execute_at"),
+    )

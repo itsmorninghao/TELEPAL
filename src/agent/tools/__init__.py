@@ -2,7 +2,14 @@
 
 import logging
 
-from src.agent.tools.memory import save_memory, search_memories
+from src.agent.tools.memory import (
+    chat_id_context,
+    chat_type_context,
+    save_memory,
+    search_memories,
+    user_id_context,
+)
+from src.agent.tools.scheduler import schedule_reminder
 from src.agent.tools.scraper import scrape_webpage
 from src.agent.tools.search import tavily_search
 from src.agent.tools.time import get_user_time
@@ -16,7 +23,12 @@ __all__ = [
     "tavily_search",
     "scrape_webpage",
     "get_user_time",
+    "schedule_reminder",
     "get_available_tools",
+    # 上下文变量
+    "user_id_context",
+    "chat_id_context",
+    "chat_type_context",
 ]
 
 
@@ -27,6 +39,7 @@ def get_available_tools():
         save_memory,
         search_memories,
         get_user_time,
+        schedule_reminder,
     ]
 
     # 如果配置了 TAVILY_API_KEY，才添加 tavily_search 工具
