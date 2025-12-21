@@ -10,11 +10,18 @@ from langchain_core.messages import AIMessage, HumanMessage
 from telegramify_markdown import markdownify
 
 from src.agent.graph import get_compiled_graph
-from src.agent.state import AgentState
+from src.agent.state import SupervisorState
 from src.auth.service import (
     check_group_authorized,
     check_private_authorization,
     check_user_role_in_group,
+)
+from src.bot import (
+    bot_instance,
+    chat_id_context,
+    chat_type_context,
+    group_id_context,
+    user_id_context,
 )
 from src.bot.filters import (
     group_mention_filter,
@@ -33,15 +40,26 @@ router = Router()
 async def handle_chat(message: Message) -> None:
     """处理聊天消息，调用 AI 生成回复"""
     try:
-        user_message = message.text or message.caption or ""
-
-        # 获取用户和聊天信息
         if not message.from_user:
-            logger.warning("收到没有 from_user 的消息")
             return
+        
         user_id = message.from_user.id
         chat_type = "private" if message.chat.type == "private" else "group"
-        chat_id = message.chat.id if chat_type == "group" else None
+        
+        # 群组ID：群聊时为群组ID，私聊时为None
+        group_id = message.chat.id if chat_type == "group" else None
+        
+        # 消息目标ID：私聊时为user_id，群聊时为group_id
+        chat_id = user_id if chat_type == "private" else group_id
+
+        # 设置上下文变量（必须在确定正确的值后设置）
+        user_id_context.set(user_id)
+        chat_type_context.set(chat_type)
+        group_id_context.set(group_id)
+        chat_id_context.set(chat_id)
+        bot_instance.set(message.bot)
+
+        user_message = message.text or message.caption or ""
 
         # 检查是否回复消息，提取被回复的内容
         replied_message: Optional[str] = None
@@ -57,15 +75,16 @@ async def handle_chat(message: Message) -> None:
             await message.bot.send_chat_action(chat_id=message.chat.id, action="typing")
 
         # 获取或创建 Agent Graph
-        graph, config = await get_compiled_graph(user_id, chat_type, chat_id)
+        graph, config = await get_compiled_graph(user_id, chat_type, group_id)
 
         # 构建初始状态
         thread_id = config["configurable"]["thread_id"]
-        initial_state: AgentState = {
+        initial_state: SupervisorState = {
             "messages": [HumanMessage(content=user_message)],
             "replied_message": replied_message,
             "user_id": user_id,
             "chat_type": chat_type,
+            "group_id": group_id,
             "chat_id": chat_id,
             "thread_id": thread_id,
         }
@@ -170,13 +189,14 @@ async def handle_message(message: Message):
 
     # 群组处理流程
     else:
-        is_group_authorized = await check_group_authorized(message.chat.id)
+        group_id = message.chat.id
+        is_group_authorized = await check_group_authorized(group_id)
         if not is_group_authorized:
             try:
                 await message.answer(
-                    f"本群 {message.chat.id} 未获授权，机器人将退出。", parse_mode=None
+                    f"本群 {group_id} 未获授权，机器人将退出。", parse_mode=None
                 )
-                await message.bot.leave_chat(message.chat.id)
+                await message.bot.leave_chat(group_id)
             except TelegramForbiddenError:
                 logger.debug("机器人已不在群组中")
             except Exception as e:
@@ -192,7 +212,7 @@ async def handle_message(message: Message):
 
         # 用户身份判定
         user_role = await check_user_role_in_group(
-            message.bot, message.chat.id, user_id
+            message.bot, group_id, user_id
         )
         if user_role == "unauthorized":
             await message.answer("您未获本群授权")

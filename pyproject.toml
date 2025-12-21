@@ -23,6 +23,7 @@ dependencies = [
     "geopy>=2.4.0",
     "timezonefinder>=6.2.0",
     "apscheduler>=3.10.4",
+    "jinja2>=3.1.0",
 ]
 
 [tool.uv]

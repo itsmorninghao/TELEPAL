@@ -132,8 +132,8 @@ TelePal/
 │   │   ├── models.py    # 领域模型（dataclass）
 │   │   └── service.py   # 权限检查服务
 │   ├── bot/             # Telegram Bot
-│   │   ├── handlers.py  # 消息处理
-│   │   ├── admin_handlers.py  # 管理命令
+│   │   ├── message_handlers.py  # 消息处理
+│   │   ├── command_handlers.py  # 命令处理
 │   │   ├── commands.py  # 命令注册
 │   │   ├── filters.py   # 消息过滤器
 │   │   ├── location_service.py  # 位置/时区服务
@@ -155,8 +155,7 @@ TelePal/
 │   │   └── tools/       # Agent 工具
 │   │       ├── memory.py   # 记忆工具
 │   │       ├── scheduler.py  # 定时任务工具
-│   │       ├── scraper.py  # 网页抓取
-│   │       ├── search.py   # 网络搜索
+│   │       ├── search.py   # 网络搜索和网页抓取
 │   │       └── time.py    # 时间工具
 │   └── utils/
 │       ├── logger.py
@@ -167,7 +166,7 @@ TelePal/
 ## 开发计划
 - [x] 让模型能够感知时间,兼容多时区
 - [x] 基于自然语言的生成/执行定时任务
-- [ ] 准备采用supervisor的架构形式
+- [x] 准备采用supervisor的架构形式
 - [ ] 在群聊中能够识别出不同的人,而不是把所有人当成同一个人
 - [ ] 可能会做多会话管理,正在考虑是否需要这样的功能
 - [ ] 可能会考虑对SQLite的支持以简化部署

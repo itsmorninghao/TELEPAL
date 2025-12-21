@@ -40,3 +40,6 @@ venv/
 env/
 ENV/
 .venv
+
+# 数据
+data/

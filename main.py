@@ -7,8 +7,8 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
-from src.bot.admin_handlers import admin_router
-from src.bot.handlers import router as handlers_router
+from src.bot.command_handlers import command_router
+from src.bot.message_handlers import router as message_router
 from src.bot.middleware import (
     ErrorHandlingMiddleware,
     LoggingMiddleware,
@@ -58,9 +58,9 @@ async def main():
         dp.message.middleware(LoggingMiddleware())
 
         # 注册路由器
-        # 注意：顺序很重要，命令处理器（admin_router）应该先注册然后才是消息处理器（handlers_router）
-        dp.include_router(admin_router)
-        dp.include_router(handlers_router)
+        # 注意：顺序很重要，命令处理器（command_router）应该先注册然后才是消息处理器（message_router）
+        dp.include_router(command_router)
+        dp.include_router(message_router)
 
         logger.info("telepal已启动")
 
