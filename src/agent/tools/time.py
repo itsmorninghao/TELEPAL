@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 
 from langchain_core.tools import tool
 
-from src.agent.tools.memory import user_id_context
+from src.bot import user_id_context
 from src.database.repositories import profiles
 
 logger = logging.getLogger(__name__)

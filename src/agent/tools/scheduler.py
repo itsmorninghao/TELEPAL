@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 from langchain_core.tools import tool
 
-from src.agent.tools.memory import chat_id_context, chat_type_context, user_id_context
+from src.bot import chat_id_context, chat_type_context, user_id_context
 from src.bot.scheduler_service import get_scheduler_service
 
 logger = logging.getLogger(__name__)

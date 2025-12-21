@@ -48,13 +48,13 @@ async def cmd_group_authorize(message: Message, command: CommandObject):
         return
 
     try:
-        chat_id = int(args[0])
+        group_id = int(args[0])
         user_id = message.from_user.id
         chat_title: Optional[str] = message.chat.title if message.chat.title else None
 
         # 授权群组
-        await authorize_group(chat_id, chat_title, user_id)
-        await message.answer(f"群组 {chat_id} 已授权。", parse_mode=None)
+        await authorize_group(group_id, chat_title, user_id)
+        await message.answer(f"群组 {group_id} 已授权。", parse_mode=None)
 
     except ValueError:
         await message.answer(
@@ -83,14 +83,14 @@ async def cmd_group_revoke(message: Message, command: CommandObject):
         return
 
     try:
-        chat_id = int(args[0])
+        group_id = int(args[0])
 
         # 撤销授权
-        success = await revoke_group_authorization(chat_id)
+        success = await revoke_group_authorization(group_id)
         if success:
-            await message.answer(f"群组 {chat_id} 的授权已撤销。", parse_mode=None)
+            await message.answer(f"群组 {group_id} 的授权已撤销。", parse_mode=None)
         else:
-            await message.answer(f"群组 {chat_id} 未找到或未授权。", parse_mode=None)
+            await message.answer(f"群组 {group_id} 未找到或未授权。", parse_mode=None)
 
     except ValueError:
         await message.answer(
@@ -119,7 +119,7 @@ async def cmd_group_list(message: Message):
         lines = []
         for group in groups:
             title = group.chat_title or "未知"
-            lines.append(f"• {group.chat_id} - {title}")
+            lines.append(f"• {group.group_id} - {title}")
 
         result = "已授权群组：\n" + "\n".join(lines)
         await message.answer(result, parse_mode=None)
@@ -143,7 +143,7 @@ async def cmd_whitelist_add(message: Message, command: CommandObject):
 
     if not args:
         await message.answer(
-            "命令参数错误，请检查格式\n\n/whitelist_add <user_id> [private|group] [chat_id] - 添加白名单用户",
+            "命令参数错误，请检查格式\n\n/whitelist_add <user_id> [private|group] [group_id] - 添加白名单用户",
             parse_mode=None,
         )
         return
@@ -153,15 +153,15 @@ async def cmd_whitelist_add(message: Message, command: CommandObject):
 
         # 判断是超管还是群组管理员
         is_super = await check_super_admin(user_id)
-        chat_id: Optional[int] = None
+        group_id: Optional[int] = None
         chat_type = "private"
 
         if message.chat.type in ["group", "supergroup"]:
-            chat_id = message.chat.id
+            group_id = message.chat.id
             # 群组管理员执行时，自动使用当前群组 ID
             if not is_super:
                 chat_type = "group"
-                await add_to_whitelist(target_user_id, "group", chat_id, user_id)
+                await add_to_whitelist(target_user_id, "group", group_id, user_id)
                 await message.answer(
                     f"用户 {target_user_id} 已添加到当前群组白名单。", parse_mode=None
                 )
@@ -172,26 +172,26 @@ async def cmd_whitelist_add(message: Message, command: CommandObject):
             chat_type = args[1] if len(args) > 1 else "private"
             if chat_type == "group":
                 if len(args) > 2:
-                    chat_id = int(args[2])
-                elif chat_id is None:
-                    # 在私聊中，如果指定了 group 但没有提供 chat_id，需要提示
+                    group_id = int(args[2])
+                elif group_id is None:
+                    # 在私聊中，如果指定了 group 但没有提供 group_id，需要提示
                     await message.answer(
-                        "命令参数错误，请检查格式\n\n/whitelist_add <user_id> [private|group] [chat_id] - 添加白名单用户\n\n错误：添加群组白名单时需要提供 chat_id。",
+                        "命令参数错误，请检查格式\n\n/whitelist_add <user_id> [private|group] [group_id] - 添加白名单用户\n\n错误：添加群组白名单时需要提供 group_id。",
                         parse_mode=None,
                     )
                     return
             else:
-                chat_id = None
+                group_id = None
 
-            await add_to_whitelist(target_user_id, chat_type, chat_id, user_id)
+            await add_to_whitelist(target_user_id, chat_type, group_id, user_id)
             await message.answer(
-                f"用户 {target_user_id} 已添加到白名单（{chat_type}, {chat_id}）。",
+                f"用户 {target_user_id} 已添加到白名单（{chat_type}, {group_id}）。",
                 parse_mode=None,
             )
 
     except ValueError:
         await message.answer(
-            "命令参数错误，请检查格式\n\n/whitelist_add <user_id> [private|group] [chat_id] - 添加白名单用户\n\n错误：user_id 或 chat_id 必须是数字。",
+            "命令参数错误，请检查格式\n\n/whitelist_add <user_id> [private|group] [group_id] - 添加白名单用户\n\n错误：user_id 或 group_id 必须是数字。",
             parse_mode=None,
         )
     except Exception as e:
@@ -210,7 +210,7 @@ async def cmd_whitelist_remove(message: Message, command: CommandObject):
 
     if not args:
         await message.answer(
-            "命令参数错误，请检查格式\n\n/whitelist_remove <user_id> [private|group] [chat_id] - 移除白名单用户",
+            "命令参数错误，请检查格式\n\n/whitelist_remove <user_id> [private|group] [group_id] - 移除白名单用户",
             parse_mode=None,
         )
         return
@@ -220,13 +220,13 @@ async def cmd_whitelist_remove(message: Message, command: CommandObject):
 
         # 判断是超管还是群组管理员
         is_super = await check_super_admin(user_id)
-        chat_id: Optional[int] = None
+        group_id: Optional[int] = None
 
         if message.chat.type in ["group", "supergroup"]:
-            chat_id = message.chat.id
+            group_id = message.chat.id
             # 群组管理员执行时，自动使用当前群组 ID
             if not is_super:
-                success = await remove_from_whitelist(target_user_id, "group", chat_id)
+                success = await remove_from_whitelist(target_user_id, "group", group_id)
                 if success:
                     await message.answer(
                         f"用户 {target_user_id} 已从当前群组白名单移除。",
@@ -241,21 +241,21 @@ async def cmd_whitelist_remove(message: Message, command: CommandObject):
             chat_type = args[1] if len(args) > 1 else "private"
             if chat_type == "group":
                 if len(args) > 2:
-                    chat_id = int(args[2])
-                elif chat_id is None:
-                    # 在私聊中，如果指定了 group 但没有提供 chat_id，需要提示
+                    group_id = int(args[2])
+                elif group_id is None:
+                    # 在私聊中，如果指定了 group 但没有提供 group_id，需要提示
                     await message.answer(
-                        "命令参数错误，请检查格式\n\n/whitelist_remove <user_id> [private|group] [chat_id] - 移除白名单用户\n\n错误：移除群组白名单时需要提供 chat_id。",
+                        "命令参数错误，请检查格式\n\n/whitelist_remove <user_id> [private|group] [group_id] - 移除白名单用户\n\n错误：移除群组白名单时需要提供 group_id。",
                         parse_mode=None,
                     )
                     return
             else:
-                chat_id = None
+                group_id = None
 
-            success = await remove_from_whitelist(target_user_id, chat_type, chat_id)
+            success = await remove_from_whitelist(target_user_id, chat_type, group_id)
             if success:
                 await message.answer(
-                    f"用户 {target_user_id} 已从白名单移除（{chat_type}, {chat_id}）。",
+                    f"用户 {target_user_id} 已从白名单移除（{chat_type}, {group_id}）。",
                     parse_mode=None,
                 )
             else:
@@ -263,7 +263,7 @@ async def cmd_whitelist_remove(message: Message, command: CommandObject):
 
     except ValueError:
         await message.answer(
-            "命令参数错误，请检查格式\n\n/whitelist_remove <user_id> [private|group] [chat_id] - 移除白名单用户\n\n错误：user_id 或 chat_id 必须是数字。",
+            "命令参数错误，请检查格式\n\n/whitelist_remove <user_id> [private|group] [group_id] - 移除白名单用户\n\n错误：user_id 或 group_id 必须是数字。",
             parse_mode=None,
         )
     except Exception as e:
@@ -283,13 +283,13 @@ async def cmd_whitelist_list(message: Message, command: CommandObject):
     try:
         # 判断是超管还是群组管理员
         is_super = await check_super_admin(user_id)
-        chat_id: Optional[int] = None
+        group_id: Optional[int] = None
 
         if message.chat.type in ["group", "supergroup"]:
-            chat_id = message.chat.id
+            group_id = message.chat.id
             # 群组管理员执行时，自动使用当前群组 ID
             if not is_super:
-                entries = await list_whitelist("group", chat_id)
+                entries = await list_whitelist("group", group_id)
                 if not entries:
                     await message.answer("白名单为空。", parse_mode=None)
                     return
@@ -311,13 +311,13 @@ async def cmd_whitelist_list(message: Message, command: CommandObject):
             chat_type = args[0] if args else None
             if chat_type == "group":
                 if len(args) > 1:
-                    chat_id = int(args[1])
+                    group_id = int(args[1])
                 else:
-                    chat_id = None  # 查看所有群组白名单
+                    group_id = None  # 查看所有群组白名单
             else:
-                chat_id = None
+                group_id = None
 
-            entries = await list_whitelist(chat_type, chat_id)
+            entries = await list_whitelist(chat_type, group_id)
 
             if not entries:
                 await message.answer("白名单为空。", parse_mode=None)
@@ -326,7 +326,7 @@ async def cmd_whitelist_list(message: Message, command: CommandObject):
             # 格式化列表
             lines = []
             for entry in entries[:20]:  # 限制显示数量
-                chat_info = f"群组 {entry.chat_id}" if entry.chat_id else "私聊"
+                chat_info = f"群组 {entry.group_id}" if entry.group_id else "私聊"
                 lines.append(
                     f"• 用户 {entry.user_id} - {entry.chat_type} - {chat_info}"
                 )
@@ -534,13 +534,13 @@ async def cmd_help(message: Message):
     """显示帮助信息，根据用户身份显示可用命令"""
     user_id = message.from_user.id
     chat_type = "private" if message.chat.type == "private" else "group"
-    chat_id = message.chat.id if chat_type == "group" else None
+    group_id = message.chat.id if chat_type == "group" else None
 
     # 判断用户身份级别
     is_super = await check_super_admin(user_id)
     is_group_admin = False
     if chat_type == "group" and not is_super:
-        role = await check_user_role_in_group(message.bot, chat_id, user_id)
+        role = await check_user_role_in_group(message.bot, group_id, user_id)
         is_group_admin = role == "group_admin"
 
     # 确定用户角色

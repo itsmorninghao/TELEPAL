@@ -74,14 +74,14 @@ async def _init_super_admins() -> None:
             stmt = select(WhitelistEntryModel).where(
                 WhitelistEntryModel.user_id == user_id,
                 WhitelistEntryModel.chat_type == "private",
-                WhitelistEntryModel.chat_id.is_(None),
+                WhitelistEntryModel.group_id.is_(None),
             )
             result = await session.execute(stmt)
             if result.scalar_one_or_none() is None:
                 whitelist_entry = WhitelistEntryModel(
                     user_id=user_id,
                     chat_type="private",
-                    chat_id=None,
+                    group_id=None,
                     created_by=user_id,
                 )
                 session.add(whitelist_entry)

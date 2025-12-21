@@ -74,8 +74,8 @@ class AuthorizedGroupModel(Base):
     id: Mapped[int] = mapped_column(
         primary_key=True, autoincrement=True, comment="主键ID"
     )
-    chat_id: Mapped[int] = mapped_column(
-        BigInteger, unique=True, nullable=False, comment="群组ID（Telegram聊天ID）"
+    group_id: Mapped[int] = mapped_column(
+        BigInteger, unique=True, nullable=False, comment="群组ID"
     )
     chat_title: Mapped[Optional[str]] = mapped_column(String(255))
     authorized_by: Mapped[int] = mapped_column(
@@ -88,7 +88,7 @@ class AuthorizedGroupModel(Base):
         Boolean, default=True, nullable=False, comment="是否启用"
     )
 
-    __table_args__ = (Index("idx_authorized_groups_chat_id", "chat_id"),)
+    __table_args__ = (Index("idx_authorized_groups_group_id", "group_id"),)
 
     def to_domain(self) -> "AuthorizedGroup":
         """转换为领域模型"""
@@ -96,7 +96,7 @@ class AuthorizedGroupModel(Base):
 
         return AuthorizedGroup(
             id=self.id,
-            chat_id=self.chat_id,
+            group_id=self.group_id,
             chat_title=self.chat_title,
             authorized_by=self.authorized_by,
             authorized_at=self.authorized_at,
@@ -118,8 +118,8 @@ class WhitelistEntryModel(Base):
     chat_type: Mapped[str] = mapped_column(
         String(20), nullable=False, comment="聊天类型（private/group等）"
     )
-    chat_id: Mapped[Optional[int]] = mapped_column(
-        BigInteger, comment="聊天ID（Telegram聊天ID，私聊时可为空）"
+    group_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, comment="群组ID（Telegram群组ID，私聊时为空）"
     )
     created_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime, server_default=func.now(), comment="创建时间"
@@ -130,10 +130,10 @@ class WhitelistEntryModel(Base):
 
     __table_args__ = (
         UniqueConstraint(
-            "user_id", "chat_type", "chat_id", name="uq_whitelist_user_chat"
+            "user_id", "chat_type", "group_id", name="uq_whitelist_user_chat"
         ),
         Index("idx_whitelist_user_id", "user_id"),
-        Index("idx_whitelist_chat", "chat_type", "chat_id"),
+        Index("idx_whitelist_chat", "chat_type", "group_id"),
     )
 
     def to_domain(self) -> "WhitelistEntry":
@@ -144,7 +144,7 @@ class WhitelistEntryModel(Base):
             id=self.id,
             user_id=self.user_id,
             chat_type=self.chat_type,
-            chat_id=self.chat_id,
+            group_id=self.group_id,
             created_at=self.created_at,
             created_by=self.created_by,
         )
@@ -178,6 +178,8 @@ class ScheduledTaskModel(Base):
 
     用于存储用户通过自然语言创建的定时提醒任务。
     支持私聊和群聊场景，任务到期后通过 APScheduler 触发回调发送提醒消息。
+    
+    注意：chat_id 是消息目标ID，私聊时为 user_id，群聊时为 group_id。
     """
 
     __tablename__ = "scheduled_tasks"
@@ -189,7 +191,7 @@ class ScheduledTaskModel(Base):
         BigInteger, nullable=False, index=True, comment="用户ID（Telegram用户ID）"
     )
     chat_id: Mapped[int] = mapped_column(
-        BigInteger, nullable=False, index=True, comment="聊天ID（Telegram聊天ID）"
+        BigInteger, nullable=False, index=True, comment="消息目标ID（私聊时为user_id，群聊时为group_id）"
     )
     chat_type: Mapped[str] = mapped_column(
         String(20), nullable=False, comment="聊天类型（'private' 或 'group'）"

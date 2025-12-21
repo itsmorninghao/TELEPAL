@@ -2,16 +2,11 @@
 
 import logging
 import uuid
-from contextvars import ContextVar
 
 from langchain_core.tools import tool
 
+from src.bot import user_id_context
 from src.database import get_store
-
-# 定义上下文变量，用于在运行时传递用户和聊天信息
-user_id_context: ContextVar[int] = ContextVar("user_id")
-chat_id_context: ContextVar[int] = ContextVar("chat_id")
-chat_type_context: ContextVar[str] = ContextVar("chat_type")
 
 logger = logging.getLogger(__name__)
 
