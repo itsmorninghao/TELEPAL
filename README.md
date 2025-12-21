@@ -1,14 +1,17 @@
 # TelePal
 
-基于 LangGraph 的 Telegram AI 助手，支持长期记忆、网络搜索和多用户权限管理。
+基于 LangGraph 的 Telegram AI 助手，支持长期记忆、网络搜索、深度研究和多用户权限管理。
 
 ## 功能特性
 
 - **AI 对话** - 基于 OpenAI 兼容 API，支持上下文记忆
+- **Supervisor 架构** - 采用 LangGraph Supervisor 模式，智能调度工具调用
+- **深度思考/研究** - 支持异步深度研究和分析任务，自动生成研究报告
 - **长期记忆** - 使用向量数据库存储用户偏好和重要信息
 - **网络搜索** - 集成 Tavily Search，获取实时信息
 - **网页抓取** - 抓取并解析网页内容
 - **定时任务/提醒** - 支持自然语言创建定时提醒，系统重启后自动恢复
+- **多时区支持** - 基于用户位置自动识别时区，支持跨时区任务调度
 - **权限管理** - 超管、群管、白名单三级权限体系
 - **群组支持** - 支持私聊和群组，群组需 @ 或回复触发
 
@@ -16,9 +19,12 @@
 
 - [aiogram](https://github.com/aiogram/aiogram) - Telegram Bot 框架
 - [LangGraph](https://github.com/langchain-ai/langgraph) - Agent 编排
+- [deepagents](https://github.com/langchain-ai/deepagents) - 深度思考/研究 Agent
 - [PostgreSQL](https://www.postgresql.org/) - 对话历史和权限存储
 - [APScheduler](https://github.com/agronholm/apscheduler) - 定时任务调度
 - [Tavily](https://tavily.com/) - 网络搜索（可选）
+- [geopy](https://github.com/geopy/geopy) + [timezonefinder](https://github.com/MrMinimal64/timezonefinder) - 时区识别
+- [Jinja2](https://github.com/pallets/jinja) - 模板引擎
 
 ## 快速开始
 
@@ -126,8 +132,19 @@ TelePal/
 ├── src/
 │   ├── agent/           # LangGraph Agent
 │   │   ├── graph.py     # Graph 定义
-│   │   ├── prompts.py   # 系统提示词
-│   │   └── state.py     # 状态定义
+│   │   ├── state.py     # 状态定义
+│   │   ├── graphs/      # Graph 实现
+│   │   │   ├── supervisor.py  # Supervisor 主图
+│   │   │   └── deep_think.py  # 深度思考图
+│   │   ├── prompts/     # 系统提示词模板
+│   │   │   ├── supervisor.j2  # Supervisor 提示词
+│   │   │   └── deep_think.j2  # 深度思考提示词
+│   │   └── tools/       # Agent 工具
+│   │       ├── memory.py   # 记忆工具
+│   │       ├── scheduler.py  # 定时任务工具
+│   │       ├── search.py   # 网络搜索和网页抓取
+│   │       ├── think.py    # 深度思考触发工具
+│   │       └── time.py    # 时间工具
 │   ├── auth/            # 权限系统
 │   │   ├── models.py    # 领域模型（dataclass）
 │   │   └── service.py   # 权限检查服务
@@ -151,22 +168,20 @@ TelePal/
 │   │       ├── auth.py  # 权限相关
 │   │       ├── profiles.py  # 用户资料
 │   │       └── scheduled_tasks.py  # 定时任务
-│   ├── agent/           # LangGraph Agent
-│   │   └── tools/       # Agent 工具
-│   │       ├── memory.py   # 记忆工具
-│   │       ├── scheduler.py  # 定时任务工具
-│   │       ├── search.py   # 网络搜索和网页抓取
-│   │       └── time.py    # 时间工具
 │   └── utils/
 │       ├── logger.py
-│       └── settings.py
+│       ├── settings.py
+│       └── langchain_utils.py
+├── data/                # 数据目录
+├── docs/                # 文档目录
 └── logs/                # 日志目录
 ```
 
 ## 开发计划
 - [x] 让模型能够感知时间,兼容多时区
 - [x] 基于自然语言的生成/执行定时任务
-- [x] 准备采用supervisor的架构形式
+- [x] 采用 supervisor 的架构形式
+- [x] 深度思考/研究功能（异步任务）
 - [ ] 在群聊中能够识别出不同的人,而不是把所有人当成同一个人
 - [ ] 可能会做多会话管理,正在考虑是否需要这样的功能
 - [ ] 可能会考虑对SQLite的支持以简化部署
