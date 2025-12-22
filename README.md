@@ -186,6 +186,10 @@ TelePal/
 - [ ] 可能会做多会话管理,正在考虑是否需要这样的功能
 - [ ] 可能会考虑对SQLite的支持以简化部署
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=itsmorninghao/TELEPAL&type=date&legend=top-left)](https://www.star-history.com/#itsmorninghao/TELEPAL&type=date&legend=top-left)
+
 ## License
 
 MIT

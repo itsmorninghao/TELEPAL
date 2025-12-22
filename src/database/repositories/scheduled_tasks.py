@@ -90,3 +90,69 @@ async def mark_task_as_executed(task_id: int) -> bool:
         task.executed_at = datetime.now(timezone.utc)
         await session.flush()
         return True
+
+
+async def get_tasks_by_chat(chat_id: int) -> list[ScheduledTaskModel]:
+    """获取某个聊天的所有待执行任务
+
+    Args:
+        chat_id: 聊天 ID
+
+    Returns:
+        该聊天的待执行任务列表
+    """
+    async with get_session() as session:
+        now = datetime.now(timezone.utc)
+        stmt = (
+            select(ScheduledTaskModel)
+            .where(
+                ScheduledTaskModel.chat_id == chat_id,
+                ScheduledTaskModel.is_executed == False,  # noqa: E712
+                ScheduledTaskModel.execute_at > now,
+            )
+            .order_by(ScheduledTaskModel.execute_at)
+        )
+        result = await session.execute(stmt)
+        return list(result.scalars().all())
+
+
+async def get_all_pending_tasks() -> list[ScheduledTaskModel]:
+    """获取所有待执行任务
+
+    Returns:
+        所有待执行任务列表
+    """
+    async with get_session() as session:
+        now = datetime.now(timezone.utc)
+        stmt = (
+            select(ScheduledTaskModel)
+            .where(
+                ScheduledTaskModel.is_executed == False,  # noqa: E712
+                ScheduledTaskModel.execute_at > now,
+            )
+            .order_by(ScheduledTaskModel.execute_at)
+        )
+        result = await session.execute(stmt)
+        return list(result.scalars().all())
+
+
+async def delete_task(task_id: int) -> bool:
+    """删除定时任务
+
+    Args:
+        task_id: 任务 ID
+
+    Returns:
+        是否删除成功
+    """
+    async with get_session() as session:
+        stmt = select(ScheduledTaskModel).where(ScheduledTaskModel.id == task_id)
+        result = await session.execute(stmt)
+        task = result.scalar_one_or_none()
+
+        if not task:
+            return False
+
+        await session.delete(task)
+        await session.flush()
+        return True

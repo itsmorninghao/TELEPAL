@@ -9,7 +9,7 @@ from langgraph.prebuilt import ToolNode, tools_condition
 
 from src.agent.prompts import render_supervisor_prompt
 from src.agent.state import SupervisorState
-from src.agent.tools import get_supervisor_tools
+from src.agent.tools import get_tools
 from src.utils.langchain_utils import limit_messages
 from src.utils.settings import setting
 
@@ -66,7 +66,7 @@ def create_supervisor_node(model: ChatOpenAI):
 def get_supervisor_graph(checkpointer):
     """构建并编译主图"""
 
-    tools = get_supervisor_tools()
+    tools = get_tools("supervisor")
 
     # 初始化模型
     llm = ChatOpenAI(

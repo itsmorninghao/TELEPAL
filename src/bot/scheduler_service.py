@@ -174,6 +174,45 @@ class SchedulerService:
         except Exception as e:
             logger.error(f"执行任务失败: task_id={task_id}, error={e}", exc_info=True)
 
+    async def cancel_task(self, task_id: int) -> bool:
+        """取消定时任务
+
+        从内存调度器中移除任务，并从数据库中删除。
+
+        Args:
+            task_id: 任务 ID
+
+        Returns:
+            是否取消成功
+        """
+        # 调度器中移除
+        job_id = f"task_{task_id}"
+        if self._scheduler:
+            try:
+                self._scheduler.remove_job(job_id)
+                logger.info(f"任务已从调度器移除: task_id={task_id}")
+            except Exception:
+                # 任务可能不存在于调度器中（已过期或从未添加）
+                logger.debug(f"任务不在调度器中: task_id={task_id}")
+
+        # 数据库中删除
+        deleted = await task_repo.delete_task(task_id)
+        if deleted:
+            logger.info(f"任务已从数据库删除: task_id={task_id}")
+        return deleted
+
+    async def get_tasks_by_chat(self, chat_id: int) -> list:
+        """获取指定 chat_id 的待执行任务"""
+        return await task_repo.get_tasks_by_chat(chat_id)
+
+    async def get_all_pending_tasks(self) -> list:
+        """获取所有待执行任务"""
+        return await task_repo.get_all_pending_tasks()
+
+    async def get_task_by_id(self, task_id: int):
+        """根据 task_id 获取任务"""
+        return await task_repo.get_task_by_id(task_id)
+
     async def shutdown(self) -> None:
         """关闭调度器"""
         if self._scheduler:

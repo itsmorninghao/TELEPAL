@@ -11,6 +11,7 @@ from src.auth.models import UserRole
 from src.auth.service import check_super_admin, check_user_role_in_group
 from src.bot.commands import generate_help_text
 from src.bot.filters import PrivateChatFilter, RoleFilter
+from src.bot.scheduler_service import get_scheduler_service
 from src.database import get_store
 from src.database.repositories.auth import (
     add_to_whitelist,

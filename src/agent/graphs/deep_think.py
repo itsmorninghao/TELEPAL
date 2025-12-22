@@ -10,7 +10,7 @@ from langchain_openai import ChatOpenAI
 from telegramify_markdown import markdownify
 
 from src.agent.prompts import get_template
-from src.agent.tools import get_base_tools
+from src.agent.tools import get_tools
 from src.bot import bot_instance
 from src.utils.settings import setting
 
@@ -36,7 +36,7 @@ def get_deep_think_graph(topic: str, workspace_path: Path):
 
     return create_deep_agent(
         model=llm,
-        tools=get_base_tools(),
+        tools=get_tools("deep_think"),
         backend=FilesystemBackend(root_dir=workspace_path, virtual_mode=True),
         system_prompt=rendered_system_prompt,
     )
