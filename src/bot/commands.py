@@ -4,8 +4,22 @@
 实际的命令路由由 Aiogram 装饰器处理（command_handlers.py）。
 """
 
+import logging
 from dataclasses import dataclass
 from typing import List
+
+from aiogram import Bot
+from aiogram.types import (
+    BotCommand,
+    BotCommandScopeAllChatAdministrators,
+    BotCommandScopeAllGroupChats,
+    BotCommandScopeAllPrivateChats,
+    BotCommandScopeChat,
+)
+
+from src.database.repositories.auth import list_super_admins
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -88,12 +102,13 @@ COMMANDS_METADATA: List[CommandMetadata] = [
         allowed_chat_types=["private", "group"],
     ),
     # 位置信息命令由于tg限制原因仅私聊可用
+    # 为了让群聊用户也能使用相关功能，为决定加入自行选择
     CommandMetadata(
         name="set_location",
         description="设置位置信息",
         usage="/set_location - 设置位置信息",
         required_role="user",
-        allowed_chat_types=["private"],
+        allowed_chat_types=["private", "group"],
     ),
     CommandMetadata(
         name="help",
@@ -187,3 +202,67 @@ def generate_help_text(
             help_text += f"• {cmd.usage}\n"
 
     return help_text
+
+
+async def setup_bot_commands(bot: Bot) -> None:
+    """
+    设置 Bot 命令菜单
+    """
+    # 为普通用户设置私聊命令 (AllPrivateChats)
+    # 包含：user 角色 且 支持 private 的命令
+    private_user_commands = [
+        BotCommand(command=cmd.name, description=cmd.description)
+        for cmd in COMMANDS_METADATA
+        if cmd.required_role
+        in ["user", "group_admin"]  # 包含管理工具，因为私聊无法区分是否是群管
+        and "private" in cmd.allowed_chat_types
+    ]
+    if private_user_commands:
+        await bot.set_my_commands(
+            commands=private_user_commands, scope=BotCommandScopeAllPrivateChats()
+        )
+
+    # 为超管设置私聊全量命令 (ScopeChat)
+    # [超管命令 + 普通私聊命令] 的合集
+    all_private_commands_for_admin = [
+        BotCommand(command=cmd.name, description=cmd.description)
+        for cmd in COMMANDS_METADATA
+        if "private" in cmd.allowed_chat_types
+    ]
+    if all_private_commands_for_admin:
+        super_admin_ids = await list_super_admins()
+        for user_id in super_admin_ids:
+            try:
+                await bot.set_my_commands(
+                    commands=all_private_commands_for_admin,
+                    scope=BotCommandScopeChat(chat_id=user_id),
+                )
+            except Exception as e:
+                logger.warning(
+                    f"超管用户 {user_id} 设置指令失败（可能未与机器人对话过）: {e}"
+                )
+
+    # 为群组普通用户设置命令 (AllGroupChats)
+    group_user_commands = [
+        BotCommand(command=cmd.name, description=cmd.description)
+        for cmd in COMMANDS_METADATA
+        if cmd.required_role == "user" and "group" in cmd.allowed_chat_types
+    ]
+    if group_user_commands:
+        await bot.set_my_commands(
+            commands=group_user_commands, scope=BotCommandScopeAllGroupChats()
+        )
+
+    # 为群组管理员设置命令 (AllChatAdministrators)
+    # 包含：group_admin + user 的群组命令
+    group_admin_commands = [
+        BotCommand(command=cmd.name, description=cmd.description)
+        for cmd in COMMANDS_METADATA
+        if cmd.required_role in ["group_admin", "user"]
+        and "group" in cmd.allowed_chat_types
+    ]
+    if group_admin_commands:
+        await bot.set_my_commands(
+            commands=group_admin_commands,
+            scope=BotCommandScopeAllChatAdministrators(),
+        )

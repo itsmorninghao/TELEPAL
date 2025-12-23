@@ -178,7 +178,7 @@ class ScheduledTaskModel(Base):
 
     用于存储用户通过自然语言创建的定时提醒任务。
     支持私聊和群聊场景，任务到期后通过 APScheduler 触发回调发送提醒消息。
-    
+
     注意：chat_id 是消息目标ID，私聊时为 user_id，群聊时为 group_id。
     """
 
@@ -191,7 +191,10 @@ class ScheduledTaskModel(Base):
         BigInteger, nullable=False, index=True, comment="用户ID（Telegram用户ID）"
     )
     chat_id: Mapped[int] = mapped_column(
-        BigInteger, nullable=False, index=True, comment="消息目标ID（私聊时为user_id，群聊时为group_id）"
+        BigInteger,
+        nullable=False,
+        index=True,
+        comment="消息目标ID（私聊时为user_id，群聊时为group_id）",
     )
     chat_type: Mapped[str] = mapped_column(
         String(20), nullable=False, comment="聊天类型（'private' 或 'group'）"

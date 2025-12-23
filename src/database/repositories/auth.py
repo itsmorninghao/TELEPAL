@@ -60,6 +60,16 @@ async def delete_user_permission(user_id: int) -> bool:
         return result.rowcount == 1
 
 
+async def list_super_admins() -> list[int]:
+    """获取所有超管用户ID列表"""
+    async with get_session() as session:
+        stmt = select(UserPermissionModel.user_id).where(
+            UserPermissionModel.role == UserRole.SUPER_ADMIN.value
+        )
+        result = await session.execute(stmt)
+        return [row[0] for row in result.all()]
+
+
 # ==================== 群组授权操作 ====================
 
 

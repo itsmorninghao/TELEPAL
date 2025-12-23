@@ -5,6 +5,7 @@ from typing import Optional
 
 from aiogram import Router
 from aiogram.filters import Command, CommandObject
+from aiogram.fsm.context import FSMContext
 from aiogram.types import KeyboardButton, Message, ReplyKeyboardMarkup
 
 from src.auth.models import UserRole
@@ -12,6 +13,7 @@ from src.auth.service import check_super_admin, check_user_role_in_group
 from src.bot.commands import generate_help_text
 from src.bot.filters import PrivateChatFilter, RoleFilter
 from src.bot.scheduler_service import get_scheduler_service
+from src.bot.states import LocationStates
 from src.database import get_store
 from src.database.repositories.auth import (
     add_to_whitelist,
@@ -507,23 +509,34 @@ async def cmd_memory_delete(message: Message, command: CommandObject):
 # ==================== Set Location 命令 ====================
 
 
-@command_router.message(
-    Command("set_location"),
-    PrivateChatFilter(),
-)
-async def cmd_set_location(message: Message):
+@command_router.message(Command("set_location"))
+async def cmd_set_location(message: Message, state: FSMContext):
     """处理 /set_location 命令，请求用户位置信息"""
-    # 创建带位置请求按钮的键盘
-    keyboard = ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="📍 分享位置", request_location=True)],
-            [KeyboardButton(text="🚫 我拒绝!")],
-        ],
-        resize_keyboard=True,
-        one_time_keyboard=True,
-    )
+    chat_type = "private" if message.chat.type == "private" else "group"
 
-    welcome_text = "很高兴遇见你！我是 TelePal。\n\n为了给您更贴心的陪伴，我想了解您所在的时区。请点击下方按钮让我知道您的位置。放心！我只用它来调整时间，不会有除了我两的第三个人知道！。\n\n当然，如果您暂时不想分享，我们也可以先从默认时区开始。你可以随时使用 /set_location 命令来重新设置。\n\n"
+    await state.set_state(LocationStates.waiting_for_location)
+
+    # 根据聊天类型创建不同的键盘
+    if chat_type == "private":
+        keyboard = ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text="📍 分享位置", request_location=True)],
+                [KeyboardButton(text="🌍 手动选择"), KeyboardButton(text="🚫 我拒绝!")],
+            ],
+            resize_keyboard=True,
+            one_time_keyboard=True,
+        )
+        welcome_text = "很高兴遇见你！我是 TelePal。\n\n为了给您更贴心的陪伴，我想了解您所在的时区。请点击下方按钮让我知道您的位置。放心！我只用它来调整时间，不会有除了我们两个的第三个人知道！\n\n当然，如果您暂时不想分享，我们也可以先从默认时区开始。你可以随时使用 /set_location 命令来重新设置。\n\n"
+    else:
+        keyboard = ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text="🌍 手动选择"), KeyboardButton(text="🚫 我拒绝!")],
+            ],
+            resize_keyboard=True,
+            one_time_keyboard=True,
+        )
+        welcome_text = "为了给您更贴心的陪伴，我想了解您所在的时区。\n\n在群聊中，您可以通过手动选择来设置时区。您可以随时使用 /set_location 命令来重新设置。\n\n"
+
     await message.answer(welcome_text, reply_markup=keyboard, parse_mode=None)
 
 

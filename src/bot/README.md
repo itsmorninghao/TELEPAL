@@ -40,7 +40,7 @@ bot/
   - `/memory_delete [user_id] <memory_key>` - 删除长期记忆
 
 - **其他命令**
-  - `/set_location` - 设置位置信息（仅私聊）
+  - `/set_location` - 设置位置信息（私聊支持分享位置，群聊仅支持手动选择）
   - `/help` - 显示帮助信息
 
 **依赖：**

@@ -8,6 +8,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
 from src.bot.command_handlers import command_router
+from src.bot.commands import setup_bot_commands
 from src.bot.message_handlers import router as message_router
 from src.bot.middleware import (
     ErrorHandlingMiddleware,
@@ -61,6 +62,9 @@ async def main():
         # 注意：顺序很重要，命令处理器（command_router）应该先注册然后才是消息处理器（message_router）
         dp.include_router(command_router)
         dp.include_router(message_router)
+
+        # 设置 Bot 命令菜单
+        await setup_bot_commands(bot)
 
         logger.info("telepal已启动")
 

@@ -14,4 +14,6 @@ async def trigger_deep_think(topic: str) -> str:
 
     asyncio.create_task(run_deep_think_task(chat_id, topic))
 
-    return f"已经在后台启动深度代理研究“{topic}”，大概需要3~10分钟，完成后会自动通知用户"
+    return (
+        f"已经在后台启动深度代理研究“{topic}”，大概需要3~10分钟，完成后会自动通知用户"
+    )

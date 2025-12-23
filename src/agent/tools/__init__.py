@@ -24,6 +24,7 @@ __all__ = [
     "chat_type_context",
 ]
 
+
 def get_tools(agent_name: str):
     """根据 agent 名称获取对应的工具集
 
@@ -43,8 +44,8 @@ def get_tools(agent_name: str):
         schedule_reminder,
     )
     from src.agent.tools.search import scrape_webpage, tavily_search
-    from src.agent.tools.time import get_user_time
     from src.agent.tools.think import trigger_deep_think
+    from src.agent.tools.time import get_user_time
 
     if agent_name == "supervisor":
         tools = [
