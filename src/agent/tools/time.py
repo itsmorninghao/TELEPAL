@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 @tool
 async def get_user_time() -> str:
-    """获取当前用户所在时区的准确时间信息"""
+    """获取当前对话对象的实时时间"""
     # 从上下文获取 user_id
     user_id = user_id_context.get()
 
